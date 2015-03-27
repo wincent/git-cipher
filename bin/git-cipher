@@ -16,124 +16,414 @@
 #     gpg --edit-key greg@hurrell.net
 #     > trust
 #     > quit
+#
+# decrypt -- decrypt encrypted files
+#
+# Originally, Ansible didn't have the Vault feature (equivalent to Chef's
+# encrypted data bags), so the `decrypt` script (and its partner in crime,
+# `encrypt`) were developed to provide us with a workable alternative.
+#
+# [Ansible 1.5 added an `ansible-vault` command that fulfils the same purpose as
+# these files, although arguably somewhat less conveniently (and concomittantly
+# more securely); for more information, see:
+# http://docs.ansible.com/playbooks_vault.html]
+#
+# Specifically, we store encrypted versions of sensitive files in the Git repo
+# with an `.encrypted` file extension. Before running Ansible commands, we
+# decrypt the necessary files with `decrypt`. This works well because Ansible
+# doesn't employ a client-server architecture like Chef or Puppet; it suffices
+# to have the decrypted files available on the local machine where the repo is
+# checked out and the commands are run.
+#
+# The plain-text versions of the encrypted files should be ignored via the
+# gitignore mechanism (although that is only a recommendation and these scripts
+# do nothing to enforce the policy).
+#
+# This approach compares to using `git encrypt`[0] as recommended in "An example
+# of provisioning and deployment with Ansible"[1]. There are a couple of
+# problems with that approach; one is that it uses "deterministic
+# encryption"[2] in the name of convenience, while noting that it is insecure.
+# Additionally, a lengthy thread on the Git mailing list[3] argues that this is
+# an abuse of the clean/smudge filtering system.
+#
+# We use semantically secure GPG encryption and make use of timestamp
+# comparisons to avoid unnecessary churn (in other words, we only update the
+# encrypted version of a file if the plain text version is newer). Note that we
+# effectively trust the local system's integrity, relying on filesystem
+# encryption, filesystem permissions, and the general security of the system to
+# keep the plain-text safe. Also note that, like the clean/smudge filtering, we
+# are effectively forgoing some of the niceties that Git offers (compression,
+# meaningful diffs etc) in exchange for security.
+#
+# Finally, there is the current recommended best practice in the Ansible
+# community, using `vars_files`[4] and storing the sensitive information in
+# another repository. This might work well for small substitutions, but for
+# larger pieces of content like server certificates, it is more convenient to
+# work at the level of entire files.
+#
+# Dependencies:
+#
+# The use of the `--batch` and `--no-tty` switches to `gpg` requires the use of
+# `gpg-agent`. It can be installed with:
+#
+#   brew install gpg-agent
+#
+# and run with:
+#
+#   eval $(gpg-agent --daemon --allow-preset-passphrase)
+#
+# or:
+#
+#   # with "allow-preset-passphrase" in ~/.gnupg/gpg-agent.conf
+#   eval $(gpg-agent --daemon)
+#
+# To store the passphrase in the running `gpg-agent`:
+#
+#   KEYGRIP=$(gpg --fingerprint --fingerprint greg@hurrell.net |
+#             grep fingerprint |
+#             tail -1 |
+#             cut -d= -f2 |
+#             sed -e 's/ //g')
+#   /usr/local/opt/gpg-agent/libexec/gpg-preset-passphrase --preset $KEYGRIP
+#
+# To forget the passphrase:
+#
+#   /usr/local/opt/gpg-agent/libexec/gpg-preset-passphrase --forget $KEYGRIP
+#
+# As a convenience, `--preset` and `--forget` switches are provided on
+# `bin/decrypt` which wrap this functionality.
+#
+# [0]: https://github.com/shadowhand/git-encrypt
+# [1]: http://www.stavros.io/posts/example-provisioning-and-deployment-ansible/
+# [2]: http://syncom.appspot.com/papers/git_encryption.txt
+# [3]: http://git.661346.n2.nabble.com/Transparently-encrypt-repository-contents-with-GPG-td2470145.html
+# [4]: http://www.ansibleworks.com/docs/playbooks2.html/#variable-file-separation
 
 require 'fileutils' # for FileUtils.uptodate?
 require 'pathname'
 require 'shellwords'
 
-GPG_USER  = ENV['GPG_USER'] || 'greg@hurrell.net'
-EXTENSION = 'encrypted'
+class Cipher
+  EXTENSION = 'encrypted'
+  GPG_USER  = ENV['GPG_USER'] || 'greg@hurrell.net'
+  # TODO: make this configurable:
+  PRESET_COMMAND = '/usr/local/opt/gpg-agent/libexec/gpg-preset-passphrase'
+  VALID_OPTIONS = %w[force help]
+  VALID_SUBCOMMANDS = %w[decrypt encrypt help preset forget]
 
-def strip_heredoc(doc)
-  # based on method of same name from Rails
-  indent = doc.scan(/^[ \t]*(?=\S)/).map(&:size).min || 0
-  doc.gsub(/^[ \t]{#{indent}}/, '')
-end
+  def run
+    send @subcommand
+  end
 
-def check_ignored(path)
-  `git check-ignore -q #{Shellwords.escape path}`
-  puts "[warning: #{path} is not ignored]" unless $?.exitstatus.zero?
-end
+private
 
-def die(msg)
-  STDERR.puts 'error:', strip_heredoc(msg)
-  exit 1
-end
+  def initialize
+    @subcommand, @options, @files = process_args
 
-def red(string)
-  colorize(string, 31)
-end
+    if @options.include?('help') || @subcommand == 'help'
+      usage(@subcommand)
+    end
 
-def green(string)
-  colorize(string, 32)
-end
+    @force = @options.include?('force')
+  end
 
-def blue(string)
-  colorize(string, 34)
-end
-
-def kill_line()
-  # 2K deletes the line, 0G moves to column 0
-  # see: http://en.wikipedia.org/wiki/ANSI_escape_code
-  "\e[2K\e[0G"
-end
-
-def colorize(string, color)
-  "\e[#{color}m#{string}\e[0m"
-end
-
-$force = ARGV.delete('--force') || ARGV.delete('-f')
-
-def command_name
-  @command_name ||= begin
-    if `ps -p #{Process.ppid.to_i}` =~ /\bgit cipher\b/
-      'git cipher'
+  def encrypt
+    if @files.empty?
+      puts 'No explicit paths supplied: encrypting all matching files'
+      Dir["**/.*.#{EXTENSION}"].each do |file|
+        file = Pathname.new(file)
+        encrypt!(
+          file.dirname +
+          file.basename.to_s.gsub(/\A\.|\.#{EXTENSION}\z/, '')
+        )
+      end
     else
+      @files.each { |file| encrypt!(Pathname.new(file)) }
+    end
+  end
+
+  def normalize_option(option)
+    normal = option.dup
+
+    if normal.sub!(/\A--/, '') # long option
+      found = VALID_OPTIONS.find { |o| o == normal }
+    elsif normal.sub!(/\A-/, '') # short option
+      found = VALID_OPTIONS.find { |o| o[0] == normal }
+    end
+
+    die "unrecognized option: #{option}" if found.nil?
+
+    found
+  end
+
+
+  def process_args
+    options, files = ARGV.partition { |arg| arg.start_with?('-') }
+    subcommand = files.shift
+
+    options.map! { |option| normalize_option(option) }
+
+    unless VALID_SUBCOMMANDS.include?(subcommand)
+      if subcommand.nil?
+        message = 'no subcommand'
+      else
+        message = 'unrecognized subcommand'
+      end
+      die [message, "expected one of #{VALID_SUBCOMMANDS.inspect}"].join(': ')
+    end
+
+    [subcommand, options, files]
+  end
+
+  def strip_heredoc(doc)
+    # based on method of same name from Rails
+    indent = doc.scan(/^[ \t]*(?=\S)/).map(&:size).min || 0
+    doc.gsub(/^[ \t]{#{indent}}/, '')
+  end
+
+  def check_ignored(path)
+    `git check-ignore -q #{Shellwords.escape path}`
+    puts "[warning: #{path} is not ignored]" unless $?.exitstatus.zero?
+  end
+
+  def die(msg)
+    STDERR.puts red('error:'), strip_heredoc(msg)
+    exit 1
+  end
+
+  def red(string)
+    colorize(string, 31)
+  end
+
+  def green(string)
+    colorize(string, 32)
+  end
+
+  def blue(string)
+    colorize(string, 34)
+  end
+
+  def kill_line
+    # 2K deletes the line, 0G moves to column 0
+    # see: http://en.wikipedia.org/wiki/ANSI_escape_code
+    "\e[2K\e[0G"
+  end
+
+  def colorize(string, color)
+    "\e[#{color}m#{string}\e[0m"
+  end
+
+  def command_name
+    @command_name ||= begin
+      if `ps -p #{Process.ppid.to_i}` =~ /\bgit cipher\b/
+        'git cipher'
+      else
+        File.basename(__FILE__)
+      end
+    rescue
       File.basename(__FILE__)
     end
-  rescue
-    File.basename(__FILE__)
-  end
-end
-
-def usage
-  puts strip_heredoc(<<-USAGE)
-    # encrypt two files, but only if the corresponding ciphertext files are
-    # missing or older
-    #{command_name} encrypt foo bar
-
-    # encrypt all encryptable files
-    #{command_name} encrypt
-
-    # (re-)encrypt all encryptable files, even those whose corresponding
-    # ciphertext files are newer
-    #{command_name} encrypt -f # also: #{command_name} encrypt --force
-
-    # show help
-    #{command_name} encrypt -h # also: #{command_name} encrypt --help
-  USAGE
-end
-
-def process(file)
-  unless file.exist?
-    die "#{file} does not exist}"
   end
 
-  outfile = file.dirname + ".#{file.basename}.#{EXTENSION}"
+  # Print usage information and exit.
+  def usage(subcommand)
+    case subcommand
+    when 'decrypt'
+      puts strip_heredoc(<<-USAGE)
+        #{command_name} decrypt [-f|--force] [FILES...]
 
-  print "#{file} -> #{outfile} "
-  if FileUtils.uptodate?(outfile, [file]) && !$force
-    puts blue('[up to date]')
-  else
-    print green('[encrypting ...')
-    `gpg -a -q --batch --no-tty --yes -r #{GPG_USER} -o #{outfile} -e #{file}`
-    if $?.success?
-      puts green(' done]')
+        Decrypts files that have been encrypted for storage in version control
+
+            Decrypt two files, but only if the corresponding plain-text files
+            are missing or older:
+
+                #{command_name} decrypt .foo.encrypted .bar.encrypted
+
+            Decrypt all decryptable files:
+
+                #{command_name} decrypt
+
+            (Re-)decrypt all decryptable files, even those whose corresponding
+            plain-text files are newer:
+
+                #{command_name} decrypt -f
+                #{command_name} decrypt --force # (alternative syntax)
+      USAGE
+    when 'encrypt'
+      puts strip_heredoc(<<-USAGE)
+        #{command_name} encrypt [-f|--force] [FILES...]
+
+        Encrypts files for storage in version control
+
+            Encrypt two files, but only if the corresponding ciphertext files
+            are missing or older:
+
+                #{command_name} encrypt foo bar
+
+            Encrypt all encryptable files:
+
+                #{command_name} encrypt
+
+            (Re-)encrypt all encryptable files, even those whose corresponding
+            ciphertext files are newer:
+
+                #{command_name} encrypt -f
+                #{command_name} encrypt --force # (alternative syntax)
+      USAGE
+    when 'forget'
+      puts strip_heredoc(<<-USAGE)
+        #{command_name} forget
+
+          Forget passphrase previously stored using `#{command_name} preset`:
+
+              #{command_name} forget
+      USAGE
+    when 'preset'
+      puts strip_heredoc(<<-USAGE)
+        #{command_name} preset
+
+          Store a passphrase in a running `gpg-agent` agent:
+
+              #{command_name} preset
+      USAGE
     else
-      print kill_line()
-      puts red('[encrypting ... failed; bailing]')
-      exit $?.exitstatus
+      puts strip_heredoc(<<-USAGE)
+        Available commands (invoke any with -h or --help for more info):
+
+            #{command_name} decrypt
+            #{command_name} encrypt
+            #{command_name} forget
+            #{command_name} preset
+      USAGE
+    end
+
+    exit
+  end
+
+  def encrypt!(file)
+    unless file.exist?
+      die "#{file} does not exist"
+    end
+
+    outfile = file.dirname + ".#{file.basename}.#{EXTENSION}"
+
+    print "#{file} -> #{outfile} "
+    if FileUtils.uptodate?(outfile, [file]) && !@force
+      puts blue('[up to date]')
+    else
+      print green('[encrypting ...')
+      `gpg -a -q --batch --no-tty --yes -r #{GPG_USER} -o #{outfile} -e #{file}`
+      if $?.success?
+        puts green(' done]')
+      else
+        print kill_line
+        puts red('[encrypting ... failed; bailing]')
+        exit $?.exitstatus
+      end
+    end
+
+    File.chmod(0600, file)
+    check_ignored(file)
+  end
+
+  def keygrip
+    # get the subkey fingerprint and convert it into a 40-char hex code
+    @keygrip ||= `gpg --fingerprint --fingerprint #{GPG_USER} |
+                  grep fingerprint |
+                  tail -1 |
+                  cut -d= -f2 |
+                  sed -e 's/ //g'`
+  end
+
+  def decrypt!(file)
+    unless ENV['GPG_AGENT_INFO']
+      die <<-MSG
+        GPG_AGENT_INFO not present in the environment.
+        Try running:
+          eval $(gpg-agent --daemon)
+          #{command_name} preset
+      MSG
+    end
+
+    pathname = Pathname.new(file)
+    basename = pathname.basename.to_s
+    unless basename.start_with?('.')
+      die "#{file} does not begin with a period"
+    end
+
+    unless basename.end_with?(".#{EXTENSION}")
+      die "#{file} does not have an .#{EXTENSION} extension"
+    end
+
+    unless pathname.exist?
+      die "#{file} does not exist"
+    end
+
+    outfile = pathname.dirname + basename.gsub(
+      /\A\.|\.#{EXTENSION}\z/, ''
+    )
+
+    print "#{file} -> #{outfile} "
+
+    if FileUtils.uptodate?(outfile, [file]) && !$force
+      # decrypted is newer than encrypted; it might have local changes which we
+      # could blow away, so warn
+      puts red('[warning: plain-text newer than ciphertext; skipping]')
+    else
+      print green('[decrypting ...')
+      `gpg -q --yes --batch --no-tty --use-agent -o #{outfile} -d #{file}`
+      if $?.success?
+        puts green(' done]')
+
+        File.chmod(0600, outfile)
+
+        # mark plain-text as older than ciphertext, this will prevent a
+        # bin/encrypt run from needlessly changing the contents of the ciphertext
+        # (as the encryption is non-deterministic)
+        time = File.mtime(file) - 1
+        File.utime(time, time, outfile)
+      else
+        print kill_line
+        puts red('[decrypting ... failed; bailing]')
+        exit $?.exitstatus
+      end
+
+      check_ignored(outfile)
     end
   end
 
-  File.chmod(0600, file)
-  check_ignored(file)
-end
-
-if ARGV.include?('-h') || ARGV.include?('--help')
-  usage
-  exit
-end
-
-if ARGV.empty?
-  puts 'No explicit paths supplied: encrypting all matching files'
-  Dir["**/.*.#{EXTENSION}"].each do |file|
-    file = Pathname.new(file)
-    process(
-      file.dirname +
-      file.basename.to_s.gsub(/\A\.|\.#{EXTENSION}\z/, '')
-    )
+  def get_passphrase
+    print 'Passphrase [will not be echoed]: '
+    `stty -echo` # quick hack, cheaper than depending on highline gem
+    STDIN.gets.chomp
+  ensure
+    `stty echo`
+    puts
   end
-else
-  ARGV.each { |file| process(Pathname.new(file)) }
+
+  def preset
+    passphrase = get_passphrase
+    IO.popen("#{PRESET_COMMAND} --preset #{keygrip}", 'w+') do |io|
+      io.puts passphrase
+      io.close_write
+      puts io.read # usually silent
+    end
+    die 'gpg-preset-passphrase failed' unless $?.success?
+  end
+
+  def forget
+    `#{PRESET_COMMAND} --forget #{keygrip}`
+    die 'gpg-preset-passphrase failed' unless $?.success?
+  end
+
+  def decrypt
+    if @files.empty?
+      puts 'No explicit paths supplied: decrypting all matching files'
+      Dir["**/.*.#{EXTENSION}"].each { |file| decrypt!(file) }
+    else
+      @files.each { |file| decrypt!(file) }
+    end
+  end
 end
+
+Cipher.new.run
