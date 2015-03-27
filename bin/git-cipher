@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-# encrypt -- encrypt files
+# git-cipher -- encrypt/decrypt files
 #
 # Utility script for encrypting sensitive files suitable for storage in a public
 # Git repo. For more details on why we need this, see bin/decrypt.
@@ -64,21 +64,25 @@ end
 
 $force = ARGV.delete('--force') || ARGV.delete('-f')
 
+def command_name
+  'git cipher'
+end
+
 def usage
   puts strip_heredoc(<<-USAGE)
     # encrypt two files, but only if the corresponding ciphertext files are
     # missing or older
-    bin/encrypt foo bar
+    #{command_name} encrypt foo bar
 
     # encrypt all encryptable files
-    bin/encrypt
+    #{command_name} encrypt
 
     # (re-)encrypt all encryptable files, even those whose corresponding
     # ciphertext files are newer
-    bin/encrypt -f # also: bin/encrypt --force
+    #{command_name} encrypt -f # also: #{command_name} encrypt --force
 
     # show help
-    bin/encrypt -h # also: bin/encrypt --help
+    #{command_name} encrypt -h # also: #{command_name} encrypt --help
   USAGE
 end
 
