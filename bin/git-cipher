@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # git-cipher -- encrypt/decrypt files
 
-require 'fileutils' # for FileUtils.uptodate?
+require 'fileutils'
 require 'pathname'
 require 'shellwords'
 
