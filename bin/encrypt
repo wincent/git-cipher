@@ -1,0 +1,84 @@
+#!/usr/bin/env ruby
+# encrypt -- encrypt files
+#
+# Utility script for encrypting sensitive files suitable for storage in a public
+# Git repo. For more details on why we need this, see bin/decrypt.
+#
+# Note you need to set the key trust level on your signing key to "ultimate" to
+# avoid prompts like:
+#
+#     It is NOT certain that the key belongs to the person named
+#     in the user ID.  If you *really* know what you are doing,
+#     you may answer the next question with yes.
+#
+# You can do that with:
+#
+#     gpg --edit-key greg@hurrell.net
+#     > trust
+#     > quit
+
+require 'fileutils' # for FileUtils.uptodate?
+require 'pathname'
+require_relative '../lib/bin_utils'
+
+def usage
+  puts strip_heredoc(<<-USAGE)
+    # encrypt two files, but only if the corresponding ciphertext files are
+    # missing or older
+    bin/encrypt foo bar
+
+    # encrypt all encryptable files
+    bin/encrypt
+
+    # (re-)encrypt all encryptable files, even those whose corresponding
+    # ciphertext files are newer
+    bin/encrypt -f # also: bin/encrypt --force
+
+    # show help
+    bin/encrypt -h # also: bin/encrypt --help
+  USAGE
+end
+
+def process(file)
+  unless file.exist?
+    die "#{file} does not exist}"
+  end
+
+  outfile = file.dirname + ".#{file.basename}.#{EXTENSION}"
+
+  print "#{file} -> #{outfile} "
+  if FileUtils.uptodate?(outfile, [file]) && !$force
+    puts blue('[up to date]')
+  else
+    print green('[encrypting ...')
+    `gpg -a -q --batch --no-tty --yes -r #{GPG_USER} -o #{outfile} -e #{file}`
+    if $?.success?
+      puts green(' done]')
+    else
+      print kill_line()
+      puts red('[encrypting ... failed; bailing]')
+      exit $?.exitstatus
+    end
+  end
+
+  File.chmod(0600, file)
+  check_ignored(file)
+end
+
+if ARGV.include?('-h') || ARGV.include?('--help')
+  usage
+  exit
+end
+
+if ARGV.empty?
+  puts 'No explicit paths supplied: encrypting all matching files'
+  Dir["**/.*.#{EXTENSION}"].each do |file|
+    file = Pathname.new(file)
+    process(
+      file.dirname +
+      file.basename.to_s.gsub(/\A\.|\.#{EXTENSION}\z/, '')
+    )
+  end
+else
+  ARGV.each { |file| process(Pathname.new(file)) }
+end

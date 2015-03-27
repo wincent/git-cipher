@@ -1,0 +1,224 @@
+#!/usr/bin/env ruby
+# decrypt -- decrypt encrypted files
+#
+# Originally, Ansible didn't have the Vault feature (equivalent to Chef's
+# encrypted data bags), so the `decrypt` script (and its partner in crime,
+# `encrypt`) were developed to provide us with a workable alternative.
+#
+# [Ansible 1.5 added an `ansible-vault` command that fulfils the same purpose as
+# these files, although arguably somewhat less conveniently (and concomittantly
+# more securely); for more information, see:
+# http://docs.ansible.com/playbooks_vault.html]
+#
+# Specifically, we store encrypted versions of sensitive files in the Git repo
+# with an `.encrypted` file extension. Before running Ansible commands, we
+# decrypt the necessary files with `decrypt`. This works well because Ansible
+# doesn't employ a client-server architecture like Chef or Puppet; it suffices
+# to have the decrypted files available on the local machine where the repo is
+# checked out and the commands are run.
+#
+# The plain-text versions of the encrypted files should be ignored via the
+# gitignore mechanism (although that is only a recommendation and these scripts
+# do nothing to enforce the policy).
+#
+# This approach compares to using `git encrypt`[0] as recommended in "An example
+# of provisioning and deployment with Ansible"[1]. There are a couple of
+# problems with that approach; one is that it uses "deterministic
+# encryption"[2] in the name of convenience, while noting that it is insecure.
+# Additionally, a lengthy thread on the Git mailing list[3] argues that this is
+# an abuse of the clean/smudge filtering system.
+#
+# We use semantically secure GPG encryption and make use of timestamp
+# comparisons to avoid unnecessary churn (in other words, we only update the
+# encrypted version of a file if the plain text version is newer). Note that we
+# effectively trust the local system's integrity, relying on filesystem
+# encryption, filesystem permissions, and the general security of the system to
+# keep the plain-text safe. Also note that, like the clean/smudge filtering, we
+# are effectively forgoing some of the niceties that Git offers (compression,
+# meaningful diffs etc) in exchange for security.
+#
+# Finally, there is the current recommended best practice in the Ansible
+# community, using `vars_files`[4] and storing the sensitive information in
+# another repository. This might work well for small substitutions, but for
+# larger pieces of content like server certificates, it is more convenient to
+# work at the level of entire files.
+#
+# Dependencies:
+#
+# The use of the `--batch` and `--no-tty` switches to `gpg` requires the use of
+# `gpg-agent`. It can be installed with:
+#
+#   brew install gpg-agent
+#
+# and run with:
+#
+#   eval $(gpg-agent --daemon --allow-preset-passphrase)
+#
+# or:
+#
+#   # with "allow-preset-passphrase" in ~/.gnupg/gpg-agent.conf
+#   eval $(gpg-agent --daemon)
+#
+# To store the passphrase in the running `gpg-agent`:
+#
+#   KEYGRIP=$(gpg --fingerprint --fingerprint greg@hurrell.net |
+#             grep fingerprint |
+#             tail -1 |
+#             cut -d= -f2 |
+#             sed -e 's/ //g')
+#   /usr/local/opt/gpg-agent/libexec/gpg-preset-passphrase --preset $KEYGRIP
+#
+# To forget the passphrase:
+#
+#   /usr/local/opt/gpg-agent/libexec/gpg-preset-passphrase --forget $KEYGRIP
+#
+# As a convenience, `--preset` and `--forget` switches are provided on
+# `bin/decrypt` which wrap this functionality.
+#
+# [0]: https://github.com/shadowhand/git-encrypt
+# [1]: http://www.stavros.io/posts/example-provisioning-and-deployment-ansible/
+# [2]: http://syncom.appspot.com/papers/git_encryption.txt
+# [3]: http://git.661346.n2.nabble.com/Transparently-encrypt-repository-contents-with-GPG-td2470145.html
+# [4]: http://www.ansibleworks.com/docs/playbooks2.html/#variable-file-separation
+
+require 'fileutils' # for FileUtils.uptodate?
+require 'pathname'
+require_relative '../lib/bin_utils'
+
+PRESET_COMMAND = '/usr/local/opt/gpg-agent/libexec/gpg-preset-passphrase'
+
+def usage
+  puts strip_heredoc(<<-USAGE)
+    # decrypt two files, but only if the corresponding plain-text files are
+    # missing or older
+    bin/decrypt .foo.encrypted .bar.encrypted
+
+    # decrypt all decryptable files
+    bin/decrypt
+
+    # (re-)decrypt all decryptable files, even those whose corresponding
+    # plain-text files are newer
+    bin/decrypt -f # also: bin/decrypt --force
+
+    # show help, including how to store passphrase in a running `gpg-agent`
+    bin/decrypt -h # also: bin/decrypt --help
+
+    # store passphrase in running agent
+    bin/decrypt --preset
+
+    # forget passphrase
+    bin/decrypt --forget
+  USAGE
+end
+
+def keygrip
+  # get the subkey fingerprint and convert it into a 40-char hex code
+  @keygrip ||= `gpg --fingerprint --fingerprint #{GPG_USER} |
+                grep fingerprint |
+                tail -1 |
+                cut -d= -f2 |
+                sed -e 's/ //g'`
+end
+
+def process(file)
+  pathname = Pathname.new(file)
+  basename = pathname.basename.to_s
+  unless basename.start_with?('.')
+    die "#{file} does not begin with a period"
+  end
+
+  unless basename.end_with?(".#{EXTENSION}")
+    die "#{file} does not have an .#{EXTENSION} extension"
+  end
+
+  unless pathname.exist?
+    die "#{file} does not exist"
+  end
+
+  outfile = pathname.dirname + basename.gsub(
+    /\A\.|\.#{EXTENSION}\z/, ''
+  )
+
+  print "#{file} -> #{outfile} "
+
+  if FileUtils.uptodate?(outfile, [file]) && !$force
+    # decrypted is newer than encrypted; it might have local changes which we
+    # could blow away, so warn
+    puts red('[warning: plain-text newer than ciphertext; skipping]')
+  else
+    print green('[decrypting ...')
+    `gpg -q --yes --batch --no-tty --use-agent -o #{outfile} -d #{file}`
+    if $?.success?
+      puts green(' done]')
+
+      File.chmod(0600, outfile)
+
+      # mark plain-text as older than ciphertext, this will prevent a
+      # bin/encrypt run from needlessly changing the contents of the ciphertext
+      # (as the encryption is non-deterministic)
+      time = File.mtime(file) - 1
+      File.utime(time, time, outfile)
+    else
+      print kill_line()
+      puts red('[decrypting ... failed; bailing]')
+      exit $?.exitstatus
+    end
+
+    check_ignored(outfile)
+  end
+end
+
+def get_passphrase
+  print 'Passphrase [will not be echoed]: '
+  `stty -echo` # quick hack, cheaper than depending on highline gem
+  STDIN.gets.chomp
+ensure
+  `stty echo`
+  puts
+end
+
+def preset
+  passphrase = get_passphrase
+  IO.popen("#{PRESET_COMMAND} --preset #{keygrip}", 'w+') do |io|
+    io.puts passphrase
+    io.close_write
+    puts io.read # usually silent
+  end
+  die 'gpg-preset-passphrase failed' unless $?.success?
+end
+
+def forget
+  `#{PRESET_COMMAND} --forget #{keygrip}`
+  die 'gpg-preset-passphrase failed' unless $?.success?
+end
+
+if ARGV.include?('-h') || ARGV.include?('--help')
+  usage
+  exit
+end
+
+unless ENV['GPG_AGENT_INFO']
+  die <<-MSG
+    GPG_AGENT_INFO not present in the environment.
+    Try running:
+      eval $(gpg-agent --daemon)
+      #{$0} --preset
+  MSG
+end
+
+if ARGV.include?('--preset')
+  preset
+  exit
+end
+
+if ARGV.include?('--forget')
+  forget
+  exit
+end
+
+if ARGV.empty?
+  puts 'No explicit paths supplied: decrypting all matching files'
+  Dir["**/.*.#{EXTENSION}"].each { |file| process(file) }
+else
+  ARGV.each { |file| process(file) }
+end
