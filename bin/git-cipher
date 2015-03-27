@@ -65,7 +65,15 @@ end
 $force = ARGV.delete('--force') || ARGV.delete('-f')
 
 def command_name
-  'git cipher'
+  @command_name ||= begin
+    if `ps -p #{Process.ppid.to_i}` =~ /\bgit cipher\b/
+      'git cipher'
+    else
+      File.basename(__FILE__)
+    end
+  rescue
+    File.basename(__FILE__)
+  end
 end
 
 def usage
