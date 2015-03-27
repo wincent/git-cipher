@@ -84,7 +84,7 @@ private
   end
 
   def check_ignored(path)
-    `git check-ignore -q #{Shellwords.escape path}`
+    `#{escape command_path('git')} check-ignore -q #{escape path}`
     puts "[warning: #{path} is not ignored]" unless $?.exitstatus.zero?
   end
 
@@ -214,7 +214,17 @@ private
       puts blue('[up to date]')
     else
       print green('[encrypting ...')
-      `gpg -a -q --batch --no-tty --yes -r #{GPG_USER} -o #{outfile} -e #{file}`
+      %x{
+        #{escape command_path('gpg')}
+          -a
+          -q
+          --batch
+          --no-tty
+          --yes
+          -r #{escape GPG_USER}
+          -o #{escape outfile}
+          -e #{escape file}
+      }
       if $?.success?
         puts green(' done]')
       else
@@ -230,11 +240,13 @@ private
 
   def keygrip
     # get the subkey fingerprint and convert it into a 40-char hex code
-    @keygrip ||= `gpg --fingerprint --fingerprint #{GPG_USER} |
-                  grep fingerprint |
-                  tail -1 |
-                  cut -d= -f2 |
-                  sed -e 's/ //g'`
+    @keygrip ||= %x{
+      #{escape command_path('gpg')} --fingerprint #{escape GPG_USER} |
+      grep fingerprint |
+      tail -1 |
+      cut -d= -f2 |
+      sed -e 's/ //g'
+    }
   end
 
   def decrypt!(file)
@@ -273,7 +285,16 @@ private
       puts red('[warning: plain-text newer than ciphertext; skipping]')
     else
       print green('[decrypting ...')
-      `gpg -q --yes --batch --no-tty --use-agent -o #{outfile} -d #{file}`
+      %x{
+        #{escape command_path('gpg')}
+          -q
+          --yes
+          --batch
+          --no-tty
+          --use-agent
+          -o #{escape outfile}
+          -d #{escape file}
+      }
       if $?.success?
         puts green(' done]')
 
@@ -295,17 +316,29 @@ private
   end
 
   def get_passphrase
+    stty = escape(command_path('stty'))
     print 'Passphrase [will not be echoed]: '
-    `stty -echo` # quick hack, cheaper than depending on highline gem
+    `#{stty} -echo` # quick hack, cheaper than depending on highline gem
     STDIN.gets.chomp
   ensure
-    `stty echo`
+    `#{stty} echo`
     puts
+  end
+
+  def escape(string)
+    Shellwords.escape(string)
+  end
+
+  def command_path(command)
+    path = `command -v #{escape command}`.chomp
+    die "required dependency #{command} not found" if path.empty?
+    path
   end
 
   def preset
     passphrase = get_passphrase
-    IO.popen("#{PRESET_COMMAND} --preset #{keygrip}", 'w+') do |io|
+    command = "#{escape command_path(PRESET_COMMAND)} --preset #{keygrip}"
+    IO.popen(command, 'w+') do |io|
       io.puts passphrase
       io.close_write
       puts io.read # usually silent
@@ -314,7 +347,7 @@ private
   end
 
   def forget
-    `#{PRESET_COMMAND} --forget #{keygrip}`
+    `#{escape command_path(PRESET_COMMAND)} --forget #{keygrip}`
     die 'gpg-preset-passphrase failed' unless $?.success?
   end
 
