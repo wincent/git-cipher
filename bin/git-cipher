@@ -29,6 +29,117 @@ private
     @force = @options.include?('force')
   end
 
+  def blue(string)
+    colorize(string, 34)
+  end
+
+  def check_ignored(path)
+    `#{escape command_path('git')} check-ignore -q #{escape path}`
+    puts "[warning: #{path} is not ignored]" unless $?.exitstatus.zero?
+  end
+
+  def colorize(string, color)
+    "\e[#{color}m#{string}\e[0m"
+  end
+
+  def command_name
+    @command_name ||= begin
+      if `ps -p #{Process.ppid.to_i}` =~ /\bgit cipher\b/
+        'git cipher'
+      else
+        File.basename(__FILE__)
+      end
+    rescue
+      File.basename(__FILE__)
+    end
+  end
+
+  def command_path(command)
+    path = `command -v #{escape command}`.chomp
+    die "required dependency #{command} not found" if path.empty?
+    path
+  end
+
+  def decrypt
+    if @files.empty?
+      puts 'No explicit paths supplied: decrypting all matching files'
+      Dir["**/.*.#{EXTENSION}"].each { |file| decrypt!(file) }
+    else
+      @files.each { |file| decrypt!(file) }
+    end
+  end
+
+  def decrypt!(file)
+    unless ENV['GPG_AGENT_INFO']
+      die <<-MSG
+        GPG_AGENT_INFO not present in the environment.
+        Try running:
+          eval $(gpg-agent --daemon)
+          #{command_name} preset
+      MSG
+    end
+
+    pathname = Pathname.new(file)
+    basename = pathname.basename.to_s
+    unless basename.start_with?('.')
+      die "#{file} does not begin with a period"
+    end
+
+    unless basename.end_with?(".#{EXTENSION}")
+      die "#{file} does not have an .#{EXTENSION} extension"
+    end
+
+    unless pathname.exist?
+      die "#{file} does not exist"
+    end
+
+    outfile = pathname.dirname + basename.gsub(
+      /\A\.|\.#{EXTENSION}\z/, ''
+    )
+
+    print "#{file} -> #{outfile} "
+
+    if FileUtils.uptodate?(outfile, [file]) && !$force
+      # decrypted is newer than encrypted; it might have local changes which we
+      # could blow away, so warn
+      puts red('[warning: plain-text newer than ciphertext; skipping]')
+    else
+      print green('[decrypting ...')
+      %x{
+        #{escape command_path('gpg')}
+          -q
+          --yes
+          --batch
+          --no-tty
+          --use-agent
+          -o #{escape outfile}
+          -d #{escape file}
+      }
+      if $?.success?
+        puts green(' done]')
+
+        File.chmod(0600, outfile)
+
+        # mark plain-text as older than ciphertext, this will prevent a
+        # bin/encrypt run from needlessly changing the contents of the ciphertext
+        # (as the encryption is non-deterministic)
+        time = File.mtime(file) - 1
+        File.utime(time, time, outfile)
+      else
+        print kill_line
+        puts red('[decrypting ... failed; bailing]')
+        exit $?.exitstatus
+      end
+
+      check_ignored(outfile)
+    end
+  end
+
+  def die(msg)
+    STDERR.puts red('error:'), strip_heredoc(msg)
+    exit 1
+  end
+
   def encrypt
     if @files.empty?
       puts 'No explicit paths supplied: encrypting all matching files'
@@ -44,6 +155,82 @@ private
     end
   end
 
+  def encrypt!(file)
+    unless file.exist?
+      die "#{file} does not exist"
+    end
+
+    outfile = file.dirname + ".#{file.basename}.#{EXTENSION}"
+
+    print "#{file} -> #{outfile} "
+    if FileUtils.uptodate?(outfile, [file]) && !@force
+      puts blue('[up to date]')
+    else
+      print green('[encrypting ...')
+      %x{
+        #{escape command_path('gpg')}
+          -a
+          -q
+          --batch
+          --no-tty
+          --yes
+          -r #{escape GPG_USER}
+          -o #{escape outfile}
+          -e #{escape file}
+      }
+      if $?.success?
+        puts green(' done]')
+      else
+        print kill_line
+        puts red('[encrypting ... failed; bailing]')
+        exit $?.exitstatus
+      end
+    end
+
+    File.chmod(0600, file)
+    check_ignored(file)
+  end
+
+  def escape(string)
+    Shellwords.escape(string)
+  end
+
+  def forget
+    `#{escape command_path(PRESET_COMMAND)} --forget #{keygrip}`
+    die 'gpg-preset-passphrase failed' unless $?.success?
+  end
+
+  def get_passphrase
+    stty = escape(command_path('stty'))
+    print 'Passphrase [will not be echoed]: '
+    `#{stty} -echo` # quick hack, cheaper than depending on highline gem
+    STDIN.gets.chomp
+  ensure
+    `#{stty} echo`
+    puts
+  end
+
+  def green(string)
+    colorize(string, 32)
+  end
+
+  def keygrip
+    # get the subkey fingerprint and convert it into a 40-char hex code
+    @keygrip ||= %x{
+      #{escape command_path('gpg')} --fingerprint #{escape GPG_USER} |
+      grep fingerprint |
+      tail -1 |
+      cut -d= -f2 |
+      sed -e 's/ //g'
+    }
+  end
+
+  def kill_line
+    # 2K deletes the line, 0G moves to column 0
+    # see: http://en.wikipedia.org/wiki/ANSI_escape_code
+    "\e[2K\e[0G"
+  end
+
   def normalize_option(option)
     normal = option.dup
 
@@ -56,6 +243,17 @@ private
     die "unrecognized option: #{option}" if found.nil?
 
     found
+  end
+
+  def preset
+    passphrase = get_passphrase
+    command = "#{escape command_path(PRESET_COMMAND)} --preset #{keygrip}"
+    IO.popen(command, 'w+') do |io|
+      io.puts passphrase
+      io.close_write
+      puts io.read # usually silent
+    end
+    die 'gpg-preset-passphrase failed' unless $?.success?
   end
 
   def process_args
@@ -76,54 +274,14 @@ private
     [subcommand, options, files]
   end
 
-  def strip_heredoc(doc)
-    # based on method of same name from Rails
-    indent = doc.scan(/^[ \t]*(?=\S)/).map(&:size).min || 0
-    doc.gsub(/^[ \t]{#{indent}}/, '')
-  end
-
-  def check_ignored(path)
-    `#{escape command_path('git')} check-ignore -q #{escape path}`
-    puts "[warning: #{path} is not ignored]" unless $?.exitstatus.zero?
-  end
-
-  def die(msg)
-    STDERR.puts red('error:'), strip_heredoc(msg)
-    exit 1
-  end
-
   def red(string)
     colorize(string, 31)
   end
 
-  def green(string)
-    colorize(string, 32)
-  end
-
-  def blue(string)
-    colorize(string, 34)
-  end
-
-  def kill_line
-    # 2K deletes the line, 0G moves to column 0
-    # see: http://en.wikipedia.org/wiki/ANSI_escape_code
-    "\e[2K\e[0G"
-  end
-
-  def colorize(string, color)
-    "\e[#{color}m#{string}\e[0m"
-  end
-
-  def command_name
-    @command_name ||= begin
-      if `ps -p #{Process.ppid.to_i}` =~ /\bgit cipher\b/
-        'git cipher'
-      else
-        File.basename(__FILE__)
-      end
-    rescue
-      File.basename(__FILE__)
-    end
+  def strip_heredoc(doc)
+    # based on method of same name from Rails
+    indent = doc.scan(/^[ \t]*(?=\S)/).map(&:size).min || 0
+    doc.gsub(/^[ \t]{#{indent}}/, '')
   end
 
   # Print usage information and exit.
@@ -199,164 +357,6 @@ private
     end
 
     exit
-  end
-
-  def encrypt!(file)
-    unless file.exist?
-      die "#{file} does not exist"
-    end
-
-    outfile = file.dirname + ".#{file.basename}.#{EXTENSION}"
-
-    print "#{file} -> #{outfile} "
-    if FileUtils.uptodate?(outfile, [file]) && !@force
-      puts blue('[up to date]')
-    else
-      print green('[encrypting ...')
-      %x{
-        #{escape command_path('gpg')}
-          -a
-          -q
-          --batch
-          --no-tty
-          --yes
-          -r #{escape GPG_USER}
-          -o #{escape outfile}
-          -e #{escape file}
-      }
-      if $?.success?
-        puts green(' done]')
-      else
-        print kill_line
-        puts red('[encrypting ... failed; bailing]')
-        exit $?.exitstatus
-      end
-    end
-
-    File.chmod(0600, file)
-    check_ignored(file)
-  end
-
-  def keygrip
-    # get the subkey fingerprint and convert it into a 40-char hex code
-    @keygrip ||= %x{
-      #{escape command_path('gpg')} --fingerprint #{escape GPG_USER} |
-      grep fingerprint |
-      tail -1 |
-      cut -d= -f2 |
-      sed -e 's/ //g'
-    }
-  end
-
-  def decrypt!(file)
-    unless ENV['GPG_AGENT_INFO']
-      die <<-MSG
-        GPG_AGENT_INFO not present in the environment.
-        Try running:
-          eval $(gpg-agent --daemon)
-          #{command_name} preset
-      MSG
-    end
-
-    pathname = Pathname.new(file)
-    basename = pathname.basename.to_s
-    unless basename.start_with?('.')
-      die "#{file} does not begin with a period"
-    end
-
-    unless basename.end_with?(".#{EXTENSION}")
-      die "#{file} does not have an .#{EXTENSION} extension"
-    end
-
-    unless pathname.exist?
-      die "#{file} does not exist"
-    end
-
-    outfile = pathname.dirname + basename.gsub(
-      /\A\.|\.#{EXTENSION}\z/, ''
-    )
-
-    print "#{file} -> #{outfile} "
-
-    if FileUtils.uptodate?(outfile, [file]) && !$force
-      # decrypted is newer than encrypted; it might have local changes which we
-      # could blow away, so warn
-      puts red('[warning: plain-text newer than ciphertext; skipping]')
-    else
-      print green('[decrypting ...')
-      %x{
-        #{escape command_path('gpg')}
-          -q
-          --yes
-          --batch
-          --no-tty
-          --use-agent
-          -o #{escape outfile}
-          -d #{escape file}
-      }
-      if $?.success?
-        puts green(' done]')
-
-        File.chmod(0600, outfile)
-
-        # mark plain-text as older than ciphertext, this will prevent a
-        # bin/encrypt run from needlessly changing the contents of the ciphertext
-        # (as the encryption is non-deterministic)
-        time = File.mtime(file) - 1
-        File.utime(time, time, outfile)
-      else
-        print kill_line
-        puts red('[decrypting ... failed; bailing]')
-        exit $?.exitstatus
-      end
-
-      check_ignored(outfile)
-    end
-  end
-
-  def get_passphrase
-    stty = escape(command_path('stty'))
-    print 'Passphrase [will not be echoed]: '
-    `#{stty} -echo` # quick hack, cheaper than depending on highline gem
-    STDIN.gets.chomp
-  ensure
-    `#{stty} echo`
-    puts
-  end
-
-  def escape(string)
-    Shellwords.escape(string)
-  end
-
-  def command_path(command)
-    path = `command -v #{escape command}`.chomp
-    die "required dependency #{command} not found" if path.empty?
-    path
-  end
-
-  def preset
-    passphrase = get_passphrase
-    command = "#{escape command_path(PRESET_COMMAND)} --preset #{keygrip}"
-    IO.popen(command, 'w+') do |io|
-      io.puts passphrase
-      io.close_write
-      puts io.read # usually silent
-    end
-    die 'gpg-preset-passphrase failed' unless $?.success?
-  end
-
-  def forget
-    `#{escape command_path(PRESET_COMMAND)} --forget #{keygrip}`
-    die 'gpg-preset-passphrase failed' unless $?.success?
-  end
-
-  def decrypt
-    if @files.empty?
-      puts 'No explicit paths supplied: decrypting all matching files'
-      Dir["**/.*.#{EXTENSION}"].each { |file| decrypt!(file) }
-    else
-      @files.each { |file| decrypt!(file) }
-    end
   end
 end
 
