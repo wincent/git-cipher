@@ -105,7 +105,7 @@ private
       puts red('[warning: plain-text newer than ciphertext; skipping]')
     else
       print green('[decrypting ...')
-      %x{
+      execute(%{
         #{escape command_path('gpg')}
           -q
           --yes
@@ -114,7 +114,7 @@ private
           --use-agent
           -o #{escape outfile}
           -d #{escape file}
-      }
+      })
       if $?.success?
         puts green(' done]')
 
@@ -167,7 +167,7 @@ private
       puts blue('[up to date]')
     else
       print green('[encrypting ...')
-      %x{
+      execute(%{
         #{escape command_path('gpg')}
           -a
           -q
@@ -177,7 +177,7 @@ private
           -r #{escape GPG_USER}
           -o #{escape outfile}
           -e #{escape file}
-      }
+      })
       if $?.success?
         puts green(' done]')
       else
@@ -193,6 +193,10 @@ private
 
   def escape(string)
     Shellwords.escape(string)
+  end
+
+  def execute(string)
+    %x{#{string.gsub("\n", ' ')}}
   end
 
   def forget
@@ -216,13 +220,13 @@ private
 
   def keygrip
     # get the subkey fingerprint and convert it into a 40-char hex code
-    @keygrip ||= %x{
+    @keygrip ||= execute(%{
       #{escape command_path('gpg')} --fingerprint #{escape GPG_USER} |
       grep fingerprint |
       tail -1 |
       cut -d= -f2 |
       sed -e 's/ //g'
-    }
+    })
   end
 
   def kill_line
