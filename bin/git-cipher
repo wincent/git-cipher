@@ -58,7 +58,6 @@ private
     found
   end
 
-
   def process_args
     options, files = ARGV.partition { |arg| arg.start_with?('-') }
     subcommand = files.shift
