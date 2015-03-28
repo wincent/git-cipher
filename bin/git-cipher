@@ -99,7 +99,7 @@ private
 
     print "#{file} -> #{outfile} "
 
-    if FileUtils.uptodate?(outfile, [file]) && !$force
+    if FileUtils.uptodate?(outfile, [file]) && !@force
       # decrypted is newer than encrypted; it might have local changes which we
       # could blow away, so warn
       puts red('[warning: plain-text newer than ciphertext; skipping]')
