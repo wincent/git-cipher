@@ -7,9 +7,8 @@ require 'shellwords'
 
 class Cipher
   EXTENSION = 'encrypted'
-  GPG_USER  = ENV['GPG_USER'] || 'greg@hurrell.net'
-  # TODO: make this configurable:
-  PRESET_COMMAND = '/usr/local/opt/gpg-agent/libexec/gpg-preset-passphrase'
+  DEFAULT_GPG_USER  = 'greg@hurrell.net'
+  DEFAULT_GPG_PRESET_COMMAND = '/usr/local/opt/gpg-agent/libexec/gpg-preset-passphrase'
   VALID_OPTIONS = %w[force help]
   VALID_SUBCOMMANDS = %w[decrypt encrypt help preset forget]
 
@@ -174,7 +173,7 @@ private
           --batch
           --no-tty
           --yes
-          -r #{escape GPG_USER}
+          -r #{escape gpg_user}
           -o #{escape outfile}
           -e #{escape file}
       })
@@ -200,8 +199,14 @@ private
   end
 
   def forget
-    `#{escape command_path(PRESET_COMMAND)} --forget #{keygrip}`
+    `#{escape command_path(gpg_preset_command)} --forget #{keygrip}`
     die 'gpg-preset-passphrase failed' unless $?.success?
+  end
+
+  def get_config(key)
+    value = `#{escape command_path('git')} config cipher.#{key}`.chomp
+    return if value.empty?
+    value
   end
 
   def get_passphrase
@@ -214,6 +219,14 @@ private
     puts
   end
 
+  def gpg_preset_command
+    ENV['GPG_PRESET_COMMAND'] || get_config('presetcommand') || DEFAULT_GPG_PRESET_COMMAND
+  end
+
+  def gpg_user
+    ENV['GPG_USER'] || get_config('gpguser') || DEFAULT_GPG_USER
+  end
+
   def green(string)
     colorize(string, 32)
   end
@@ -221,7 +234,7 @@ private
   def keygrip
     # get the subkey fingerprint and convert it into a 40-char hex code
     @keygrip ||= execute(%{
-      #{escape command_path('gpg')} --fingerprint #{escape GPG_USER} |
+      #{escape command_path('gpg')} --fingerprint #{escape gpg_user} |
       grep fingerprint |
       tail -1 |
       cut -d= -f2 |
@@ -251,7 +264,7 @@ private
 
   def preset
     passphrase = get_passphrase
-    command = "#{escape command_path(PRESET_COMMAND)} --preset #{keygrip}"
+    command = "#{escape command_path(gpg_preset_command)} --preset #{keygrip}"
     IO.popen(command, 'w+') do |io|
       io.puts passphrase
       io.close_write
