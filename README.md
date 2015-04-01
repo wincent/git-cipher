@@ -180,6 +180,11 @@ your encrypted content across smaller individual files and then pull the values
 from those files into a template, preserving the ability to get meaningful diffs
 of the template files themselves.)
 
+Although `git-cipher` can be obtained as a RubyGem, the executable itself is,
+by-design, a single file. This is to reduce the dependency footprint, making it
+more suitable for use in boot-strapped environments (which might not have
+RubyGems installed yet).
+
 ## Tips
 
 You may see prompts like the following, depending on the trust level of your
