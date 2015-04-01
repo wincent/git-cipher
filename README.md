@@ -1,4 +1,5 @@
 # `git-cipher`
+[![Gem Version](https://badge.fury.io/rb/git-cipher.svg)](http://badge.fury.io/rb/git-cipher)
 
 `git-cipher` is a utility script for encrypting sensitive files for storage in a
 public Git repo.
