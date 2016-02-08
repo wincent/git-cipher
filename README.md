@@ -7,9 +7,9 @@ public Git repo.
 ## Usage
 
 ```sh
-git cipher encrypt [FILES...]
-git cipher decrypt [FILES...]
-git cipher log [FILES...]
+git cipher encrypt [FILES...] # encrypts files
+git cipher decrypt [FILES...] # decrypts files
+git cipher log [FILES...]     # shows log with (plaintext) diffs
 git cipher help
 ```
 
@@ -179,7 +179,8 @@ are effectively forgoing some of the niceties that Git offers (compression,
 meaningful diffs etc) in exchange for security. (But note: you can also split
 your encrypted content across smaller individual files and then pull the values
 from those files into a template, preserving the ability to get meaningful diffs
-of the template files themselves.)
+of the template files themselves. The `log` subcommand also goes some way
+towards providing visualization of change over time in encrypted files.)
 
 Although `git-cipher` can be obtained as a RubyGem, the executable itself is,
 by-design, a single file. This is to reduce the dependency footprint, making it
