@@ -4,13 +4,14 @@
 require 'fileutils'
 require 'pathname'
 require 'shellwords'
+require 'tempfile'
 
 class Cipher
   EXTENSION = 'encrypted'
   DEFAULT_GPG_USER  = 'greg@hurrell.net'
   DEFAULT_GPG_PRESET_COMMAND = '/usr/local/opt/gpg-agent/libexec/gpg-preset-passphrase'
   VALID_OPTIONS = %w[force help]
-  VALID_SUBCOMMANDS = %w[decrypt encrypt help preset forget]
+  VALID_SUBCOMMANDS = %w[decrypt encrypt help log preset forget]
 
   def run
     send @subcommand
@@ -69,14 +70,7 @@ private
   end
 
   def decrypt!(file)
-    unless ENV['GPG_AGENT_INFO']
-      die <<-MSG
-        GPG_AGENT_INFO not present in the environment.
-        Try running:
-          eval $(gpg-agent --daemon)
-          #{command_name} preset
-      MSG
-    end
+    require_agent
 
     pathname = Pathname.new(file)
     basename = pathname.basename.to_s
@@ -104,16 +98,7 @@ private
       puts red('[warning: plain-text newer than ciphertext; skipping]')
     else
       print green('[decrypting ...')
-      execute(%{
-        #{escape command_path('gpg')}
-          -q
-          --yes
-          --batch
-          --no-tty
-          --use-agent
-          -o #{escape outfile}
-          -d #{escape file}
-      })
+      gpg_decrypt(file, outfile)
       if $?.success?
         puts green(' done]')
 
@@ -219,6 +204,19 @@ private
     puts
   end
 
+  def gpg_decrypt(file, outfile)
+    execute(%{
+      #{escape command_path('gpg')}
+        -q
+        --yes
+        --batch
+        --no-tty
+        --use-agent
+        -o #{escape outfile}
+        -d #{escape file}
+    })
+  end
+
   def gpg_preset_command
     ENV['GPG_PRESET_COMMAND'] || get_config('presetcommand') || DEFAULT_GPG_PRESET_COMMAND
   end
@@ -246,6 +244,64 @@ private
     # 2K deletes the line, 0G moves to column 0
     # see: http://en.wikipedia.org/wiki/ANSI_escape_code
     "\e[2K\e[0G"
+  end
+
+  def log
+    if @files.empty?
+      # TODO: would be nice to interleave these instead of doing them serially.
+      puts 'No explicit paths supplied: logging all matching files'
+      Dir["**/.*.#{EXTENSION}"].each { |file| log!(file) }
+    else
+      @files.each { |file| log!(file) }
+    end
+  end
+
+  def log!(file)
+    require_agent
+
+    commits = execute(%{
+      #{escape command_path('git')} log
+      --pretty=format:%H -- #{escape file}
+    }).split
+
+    commits.each do |commit|
+      files = []
+      begin
+        # Get plaintext "post" image.
+        files.push(post = temp_write(show(file, commit)))
+        files.push(
+          post_plaintext = temp_write(gpg_decrypt(post.path, '-'))
+        )
+
+        # Get plaintext "pre" image.
+        files.push(pre = temp_write(show(file, "#{commit}~")))
+        files.push(pre_plaintext = temp_write(
+          pre.size.zero? ? '' : gpg_decrypt(pre.path, '-')
+        ))
+
+        # Print commit message.
+        puts execute(%{
+          #{escape command_path('git')} --no-pager log
+          --color=always -1 #{commit}
+        })
+        puts
+
+        # Print pre-to-post diff.
+        puts execute(%{
+          #{escape command_path('git')} --no-pager diff
+          --color=always
+          #{escape pre_plaintext.path}
+          #{escape post_plaintext.path}
+        })
+        puts
+
+      ensure
+        files.each do |tempfile|
+          tempfile.close
+          tempfile.unlink
+        end
+      end
+    end
   end
 
   def normalize_option(option)
@@ -295,10 +351,38 @@ private
     colorize(string, 31)
   end
 
+  def require_agent
+    unless ENV['GPG_AGENT_INFO']
+      die <<-MSG
+        GPG_AGENT_INFO not present in the environment.
+        Try running this before retrying `#{command_name} #{@subcommand}`:
+          eval $(gpg-agent --daemon)
+          #{command_name} preset
+      MSG
+    end
+  end
+
+  def show(file, commit)
+    # Redirect stderr to /dev/null because the file might not have existed prior
+    # to this commit.
+    execute(%{
+      #{escape command_path('git')} show
+      #{commit}:#{escape file} 2> /dev/null
+    })
+  end
+
   def strip_heredoc(doc)
     # based on method of same name from Rails
     indent = doc.scan(/^[ \t]*(?=\S)/).map(&:size).min || 0
     doc.gsub(/^[ \t]{#{indent}}/, '')
+  end
+
+  def temp_write(contents)
+    file = Tempfile.new('git-cipher-')
+    file.chmod(0600)
+    file.write(contents)
+    file.flush
+    file
   end
 
   # Print usage information and exit.
@@ -354,6 +438,15 @@ private
 
               #{command_name} forget
       USAGE
+    when 'log'
+      puts strip_heredoc(<<-USAGE)
+        #{command_name} log FILE
+
+          Shows the log message and decrypted diff for FILE
+          (analogous to `git log -p -- FILE`).
+
+              #{command_name} log foo
+      USAGE
     when 'preset'
       puts strip_heredoc(<<-USAGE)
         #{command_name} preset
@@ -369,6 +462,7 @@ private
             #{command_name} decrypt
             #{command_name} encrypt
             #{command_name} forget
+            #{command_name} log
             #{command_name} preset
       USAGE
     end

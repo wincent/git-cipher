@@ -9,6 +9,7 @@ public Git repo.
 ```sh
 git cipher encrypt [FILES...]
 git cipher decrypt [FILES...]
+git cipher log [FILES...]
 git cipher help
 ```
 
