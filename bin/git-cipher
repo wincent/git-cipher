@@ -63,7 +63,7 @@ private
   def decrypt
     if @files.empty?
       puts 'No explicit paths supplied: decrypting all matching files'
-      Dir["**/.*.#{EXTENSION}"].each { |file| decrypt!(file) }
+      matching.each { |file| decrypt!(file) }
     else
       @files.each { |file| decrypt!(file) }
     end
@@ -127,7 +127,7 @@ private
   def encrypt
     if @files.empty?
       puts 'No explicit paths supplied: encrypting all matching files'
-      Dir["**/.*.#{EXTENSION}"].each do |file|
+      matching.each do |file|
         file = Pathname.new(file)
         encrypt!(
           file.dirname +
@@ -250,7 +250,7 @@ private
     if @files.empty?
       # TODO: would be nice to interleave these instead of doing them serially.
       puts 'No explicit paths supplied: logging all matching files'
-      Dir["**/.*.#{EXTENSION}"].each { |file| log!(file) }
+      matching.each { |file| log!(file) }
     else
       @files.each { |file| log!(file) }
     end
@@ -302,6 +302,10 @@ private
         end
       end
     end
+  end
+
+  def matching
+    Dir.glob("**/*.#{EXTENSION}", File::FNM_DOTMATCH)
   end
 
   def normalize_option(option)
