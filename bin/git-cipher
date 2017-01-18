@@ -383,7 +383,6 @@ private
 
   def temp_write(contents)
     file = Tempfile.new('git-cipher-')
-    file.chmod(0600)
     file.write(contents)
     file.flush
     file
