@@ -263,6 +263,7 @@ private
       #{escape command_path('git')} log
       --pretty=format:%H -- #{escape file}
     }).split
+    suffix = "-#{File.basename(file)}"
 
     commits.each do |commit|
       files = []
@@ -270,13 +271,14 @@ private
         # Get plaintext "post" image.
         files.push(post = temp_write(show(file, commit)))
         files.push(
-          post_plaintext = temp_write(gpg_decrypt(post.path, '-'))
+          post_plaintext = temp_write(gpg_decrypt(post.path, '-'), suffix)
         )
 
         # Get plaintext "pre" image.
         files.push(pre = temp_write(show(file, "#{commit}~")))
         files.push(pre_plaintext = temp_write(
-          pre.size.zero? ? '' : gpg_decrypt(pre.path, '-')
+          pre.size.zero? ? '' : gpg_decrypt(pre.path, '-'),
+          suffix
         ))
 
         # Print commit message.
@@ -381,8 +383,8 @@ private
     doc.gsub(/^[ \t]{#{indent}}/, '')
   end
 
-  def temp_write(contents)
-    file = Tempfile.new('git-cipher-')
+  def temp_write(contents, suffix = '')
+    file = Tempfile.new(['git-cipher-', suffix])
     file.write(contents)
     file.flush
     file
