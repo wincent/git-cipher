@@ -9,9 +9,8 @@ require 'tempfile'
 class Cipher
   EXTENSION = 'encrypted'
   DEFAULT_GPG_USER  = 'greg@hurrell.net'
-  DEFAULT_GPG_PRESET_COMMAND = '/usr/local/opt/gpg-agent/libexec/gpg-preset-passphrase'
   VALID_OPTIONS = %w[force help]
-  VALID_SUBCOMMANDS = %w[decrypt encrypt help log preset forget]
+  VALID_SUBCOMMANDS = %w[decrypt encrypt help log]
 
   def run
     send @subcommand
@@ -70,8 +69,6 @@ private
   end
 
   def decrypt!(file)
-    require_agent
-
     pathname = Pathname.new(file)
     basename = pathname.basename.to_s
     unless basename.start_with?('.')
@@ -183,11 +180,6 @@ private
     %x{#{string.gsub("\n", ' ')}}
   end
 
-  def forget
-    `#{escape command_path(gpg_preset_command)} --forget #{keygrip}`
-    die 'gpg-preset-passphrase failed' unless $?.success?
-  end
-
   def get_config(key)
     value = `#{escape command_path('git')} config cipher.#{key}`.chomp
     return if value.empty?
@@ -217,27 +209,12 @@ private
     })
   end
 
-  def gpg_preset_command
-    ENV['GPG_PRESET_COMMAND'] || get_config('presetcommand') || DEFAULT_GPG_PRESET_COMMAND
-  end
-
   def gpg_user
     ENV['GPG_USER'] || get_config('gpguser') || DEFAULT_GPG_USER
   end
 
   def green(string)
     colorize(string, 32)
-  end
-
-  def keygrip
-    # get the subkey fingerprint and convert it into a 40-char hex code
-    @keygrip ||= execute(%{
-      #{escape command_path('gpg')} --fingerprint #{escape gpg_user} |
-      grep fingerprint |
-      tail -1 |
-      cut -d= -f2 |
-      sed -e 's/ //g'
-    })
   end
 
   def kill_line
@@ -257,8 +234,6 @@ private
   end
 
   def log!(file)
-    require_agent
-
     commits = execute(%{
       #{escape command_path('git')} log
       --pretty=format:%H -- #{escape file}
@@ -324,17 +299,6 @@ private
     found
   end
 
-  def preset
-    passphrase = get_passphrase
-    command = "#{escape command_path(gpg_preset_command)} --preset #{keygrip}"
-    IO.popen(command, 'w+') do |io|
-      io.puts passphrase
-      io.close_write
-      puts io.read # usually silent
-    end
-    die 'gpg-preset-passphrase failed' unless $?.success?
-  end
-
   def process_args
     options, files = ARGV.partition { |arg| arg.start_with?('-') }
     subcommand = files.shift
@@ -355,17 +319,6 @@ private
 
   def red(string)
     colorize(string, 31)
-  end
-
-  def require_agent
-    unless ENV['GPG_AGENT_INFO']
-      die <<-MSG
-        GPG_AGENT_INFO not present in the environment.
-        Try running this before retrying `#{command_name} #{@subcommand}`:
-          eval $(gpg-agent --daemon)
-          #{command_name} preset
-      MSG
-    end
   end
 
   def show(file, commit)
@@ -435,14 +388,6 @@ private
                 #{command_name} encrypt -f
                 #{command_name} encrypt --force # (alternative syntax)
       USAGE
-    when 'forget'
-      puts strip_heredoc(<<-USAGE)
-        #{command_name} forget
-
-          Forget passphrase previously stored using `#{command_name} preset`:
-
-              #{command_name} forget
-      USAGE
     when 'log'
       puts strip_heredoc(<<-USAGE)
         #{command_name} log FILE
@@ -452,23 +397,13 @@ private
 
               #{command_name} log foo
       USAGE
-    when 'preset'
-      puts strip_heredoc(<<-USAGE)
-        #{command_name} preset
-
-          Store a passphrase in a running `gpg-agent` agent:
-
-              #{command_name} preset
-      USAGE
     else
       puts strip_heredoc(<<-USAGE)
         Available commands (invoke any with -h or --help for more info):
 
             #{command_name} decrypt
             #{command_name} encrypt
-            #{command_name} forget
             #{command_name} log
-            #{command_name} preset
       USAGE
     end
 

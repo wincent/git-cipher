@@ -14,15 +14,6 @@ git cipher log [FILES...]     # shows log with (plaintext) diffs
 git cipher help
 ```
 
-Additionally, to avoid repeated password prompts when decrypting, `git-cipher`
-provides some convenience subcommands for storing credentials in and clearing
-them from a running `gpg-agent` process:
-
-```sh
-git cipher preset # stores password in running gpg-agent
-git cipher forget # clears previously stored password
-```
-
 ## Installation
 
 `git-cipher` is a single Ruby script with no major dependencies beyond
@@ -53,26 +44,6 @@ brew install git gnupg gpg-agent
 
 ## Configuration
 
-### Allowing `gpg-agent` to use preset passphrases
-
-The use of preset passphrases allows `git-cipher` to decrypt multiple files
-in multiple invocations without triggering repeated passphrase prompts. In order
-to permit this, `gpg-agent` can be started as follows:
-
-```sh
-eval $(gpg-agent --daemon --allow-preset-passphrase)
-```
-
-Alternatively:
-
-```sh
-# Permanently allow use of preset passphrases with the agent:
-echo allow-preset-passphrase >> ~/.gnupg/gpg-agent.conf
-
-# Run the agent:
-eval $(gpg-agent --daemon)
-```
-
 ### Selecting a key for encryption and decryption
 
 There are three ways to override the default signing key (which is
@@ -98,34 +69,6 @@ git config --global cipher.gpguser jane@example.com # globally
 #### 3. Edit `DEFAULT_GPG_USER` in the `git-cipher` source
 
 This last may be appropriate if you've installed by cloning the Git repo.
-
-### Selecting a `gpg-preset-passphrase` executable
-
-Again, there are three ways to override the default (which is
-`/usr/local/opt/gpg-agent/libexec/gpg-preset-passphrase`). The exact location of
-this executable will depend on the installation method you used to install
-`gpg-agent`.
-
-#### 1. Set the `GPG_PRESET_COMMAND` environment variable
-
-```sh
-GPG_PRESET_COMMAND=~/bin/gpg-preset-passphrase git cipher preset
-
-# or alternatively:
-export GPG_PRESET_COMMAND=~/bin/gpg-preset-passphrase
-git cipher preset
-```
-
-#### 2. Use `git-config` to set `cipher.presetcommand`
-
-```sh
-git config cipher.presetcommand ~/bin/gpg-preset-passphrase # per-repo
-git config --global cipher.presetcommand ~/bin/gpg-preset-passphrase # globally
-```
-
-#### 3. Edit `DEFAULT_GPG_PRESET_COMMAND` in the `git-cipher` source
-
-Again, this last may be appropriate if you've installed by cloning the Git repo.
 
 ## Architecture
 
