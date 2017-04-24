@@ -9,6 +9,7 @@ require 'tempfile'
 class Cipher
   EXTENSION = 'encrypted'
   DEFAULT_GPG_USER  = 'greg@hurrell.net'
+  EXECUTABLE_EXTENSIONS = %w[.js .sh]
   VALID_OPTIONS = %w[force help]
   VALID_SUBCOMMANDS = %w[decrypt encrypt help log ls]
 
@@ -99,11 +100,11 @@ private
       if $?.success?
         puts green(' done]')
 
-        File.chmod(0600, outfile)
+        File.chmod(mode(outfile), outfile)
 
-        # mark plain-text as older than ciphertext, this will prevent a
+        # Mark plain-text as older than ciphertext, this will prevent a
         # bin/encrypt run from needlessly changing the contents of the ciphertext
-        # (as the encryption is non-deterministic)
+        # (as the encryption is non-deterministic).
         time = File.mtime(file) - 1
         File.utime(time, time, outfile)
       else
@@ -168,7 +169,7 @@ private
       end
     end
 
-    File.chmod(0600, file)
+    File.chmod(mode(file), file)
     check_ignored(file)
   end
 
@@ -287,6 +288,16 @@ private
 
   def matching
     Dir.glob("**/*.#{EXTENSION}", File::FNM_DOTMATCH)
+  end
+
+  # Determine the appropriate mode for the given decrypted plaintext
+  # `file` based on its file extension.
+  def mode(file)
+    if EXECUTABLE_EXTENSIONS.include?(Pathname.new(file).extname)
+      0700
+    else
+      0600
+    end
   end
 
   def normalize_option(option)
