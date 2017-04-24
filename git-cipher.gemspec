@@ -1,6 +1,6 @@
 Gem::Specification.new do |spec|
   spec.name          = 'git-cipher'
-  spec.version       = '0.2'
+  spec.version       = '0.3'
   spec.authors       = ['Greg Hurrell']
   spec.email         = ['greg@hurrell.net']
   spec.homepage      = 'https://github.com/wincent/git-cipher'
