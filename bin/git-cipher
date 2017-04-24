@@ -10,7 +10,7 @@ class Cipher
   EXTENSION = 'encrypted'
   DEFAULT_GPG_USER  = 'greg@hurrell.net'
   VALID_OPTIONS = %w[force help]
-  VALID_SUBCOMMANDS = %w[decrypt encrypt help log]
+  VALID_SUBCOMMANDS = %w[decrypt encrypt help log ls]
 
   def run
     send @subcommand
@@ -281,6 +281,10 @@ private
     end
   end
 
+  def ls
+    matching.each { |file| puts file }
+  end
+
   def matching
     Dir.glob("**/*.#{EXTENSION}", File::FNM_DOTMATCH)
   end
@@ -397,6 +401,13 @@ private
 
               #{command_name} log foo
       USAGE
+    when 'ls'
+      puts strip_heredoc(<<-USAGE)
+        #{command_name} ls
+
+          Lists the encrypted files in the current directory and
+          its subdirectories.
+      USAGE
     else
       puts strip_heredoc(<<-USAGE)
         Available commands (invoke any with -h or --help for more info):
@@ -404,6 +415,7 @@ private
             #{command_name} decrypt
             #{command_name} encrypt
             #{command_name} log
+            #{command_name} ls
       USAGE
     end
 
