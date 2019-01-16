@@ -10,8 +10,12 @@ class Cipher
   EXTENSION = 'encrypted'
   DEFAULT_GPG_USER  = 'greg@hurrell.net'
   EXECUTABLE_EXTENSIONS = %w[.js .sh]
+  STATUS = {
+    'MISSING' => 0b01,
+    'MODIFIED' => 0b10,
+  }
   VALID_OPTIONS = %w[force help]
-  VALID_SUBCOMMANDS = %w[decrypt encrypt help log ls]
+  VALID_SUBCOMMANDS = %w[decrypt encrypt help log ls status]
 
   def run
     send @subcommand
@@ -286,6 +290,31 @@ private
     matching.each { |file| puts file }
   end
 
+  def status
+    exitstatus = 0
+    matching.each do |file|
+      pathname = Pathname.new(file)
+      basename = pathname.basename.to_s
+      outfile = pathname.dirname + basename.gsub(
+        /\A\.|\.#{EXTENSION}\z/, ''
+      )
+      if outfile.exist?
+        if FileUtils.uptodate?(outfile, [file])
+          # Plain-text is newer than ciphertext.
+          description = yellow('[MODIFIED]')
+          exitstatus |= STATUS['MODIFIED']
+        else
+          description = green('[OK]')
+        end
+      else
+        description = red('[MISSING]')
+        exitstatus |= STATUS['MISSING']
+      end
+      puts "#{file}: #{description}"
+    end
+    exit exitstatus
+  end
+
   def matching
     Dir.glob("**/*.#{EXTENSION}", File::FNM_DOTMATCH)
   end
@@ -419,6 +448,17 @@ private
           Lists the encrypted files in the current directory and
           its subdirectories.
       USAGE
+    when 'status'
+      puts strip_heredoc(<<-USAGE)
+        #{command_name} status
+
+          Shows the status of encrypted files in the current directory and
+          its subdirectories.
+
+          Exits with status #{STATUS['MISSING']} if any decrypted file is missing.
+          Exits with status #{STATUS['MODIFIED']} if any decrypted file is modified.
+          Exits with status #{STATUS['MISSING'] | STATUS['MODIFIED']} if both of the above apply.
+      USAGE
     else
       puts strip_heredoc(<<-USAGE)
         Available commands (invoke any with -h or --help for more info):
@@ -427,10 +467,15 @@ private
             #{command_name} encrypt
             #{command_name} log
             #{command_name} ls
+            #{command_name} status
       USAGE
     end
 
     exit
+  end
+
+  def yellow(string)
+    colorize(string, 33)
   end
 end
 
