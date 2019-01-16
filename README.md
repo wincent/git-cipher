@@ -31,7 +31,7 @@ gem install git-cipher
 
 **Note:** If you install the `git-cipher` executable somewhere in your `$PATH`, Git will treat it as a subcommand, which means you can invoke it as `git cipher`. Otherwise, you will have to provide the full path to the `git-cipher` executable.
 
-To install the external prerequisites, use your preferred method. For example, on OS X you might choose to use [Homebrew](http://brew.sh/):
+To install the external prerequisites, use your preferred method. For example, on macOS you might choose to use [Homebrew](http://brew.sh/):
 
 ```sh
 brew install git gnupg gpg-agent
