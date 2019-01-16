@@ -1,3 +1,7 @@
+# 1.0 (16 January 2019)
+
+- Add `status` subcommand.
+
 # 0.3 (24 April 2017)
 
 - Recursively explore dot directories when searching for matching files.
