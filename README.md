@@ -8,9 +8,11 @@ public Git repo.
 ## Usage
 
 ```sh
-git cipher encrypt [FILES...] # encrypts files
 git cipher decrypt [FILES...] # decrypts files
+git cipher encrypt [FILES...] # encrypts files
 git cipher log [FILES...]     # shows log with (plaintext) diffs
+git cipher ls                 # lists encrypted files
+git cipher status             # shows decrypted/modified/missing status
 git cipher help
 ```
 
