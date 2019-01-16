@@ -128,6 +128,8 @@ from those files into a template, preserving the ability to get meaningful diffs
 of the template files themselves. The `log` subcommand also goes some way
 towards providing visualization of change over time in encrypted files.)
 
+For an example of `git-cipher` usage in the wild, see files like [this one](https://github.com/wincent/wincent/blob/098b487c495ffa22135df7f4b28ad5006d1965b2/roles/ssh/files/.ssh_config.encrypted) in [my dotfiles repo](https://github.com/wincent/wincent). Others in that repo can be found by searching for files with the `.encrypted` suffix.
+
 Although `git-cipher` can be obtained as a RubyGem, the executable itself is,
 by-design, a single file. This is to reduce the dependency footprint, making it
 more suitable for use in boot-strapped environments (which might not have
