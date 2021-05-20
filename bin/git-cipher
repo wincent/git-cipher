@@ -59,7 +59,7 @@ private
   end
 
   def command_path(command)
-    path = `command -v #{escape command}`.chomp
+    path = `sh -c command\\ -v\\ #{escape command}`.chomp
     die "required dependency #{command} not found" if path.empty?
     path
   end
