@@ -1,3 +1,7 @@
+# master (not yet released)
+
+- Allow `command` check to work on Linux systems without a concrete `command` executable like macOS has.
+
 # 1.0 (16 January 2019)
 
 - Add `status` subcommand.
