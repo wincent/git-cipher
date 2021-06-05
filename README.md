@@ -41,7 +41,9 @@ brew install git gnupg gpg-agent
 
 ### Selecting a key for encryption and decryption
 
-There are three ways to override the default signing key (which is `greg@hurrell.net` and probably not useful to anybody other than me):
+`git-cipher` will encrypt files using a recipient key (public). Only the recipient can decrypt the files (using their private key). It is possible to select multiple, comma-separated recipients such that any one of them can decrypt the files, using their own key.
+
+There are three ways to override the default recipient key (which is `greg@hurrell.net,wincent@github.com` and therefore probably not useful to anybody other than me):
 
 #### 1. Set the `GPG_USER` environment variable
 
@@ -60,7 +62,7 @@ git config cipher.gpguser jane@example.com # per-repo
 git config --global cipher.gpguser jane@example.com # globally
 ```
 
-#### 3. Edit `DEFAULT_GPG_USER` in the `git-cipher` source
+#### 3. Edit `DEFAULT_GPG_USERS` in the `git-cipher` source
 
 This last may be appropriate if you've installed by cloning the Git repo.
 

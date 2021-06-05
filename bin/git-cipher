@@ -8,7 +8,7 @@ require 'tempfile'
 
 class Cipher
   EXTENSION = 'encrypted'
-  DEFAULT_GPG_USER  = 'greg@hurrell.net'
+  DEFAULT_GPG_USERS  = 'greg@hurrell.net,wincent@github.com'
   EXECUTABLE_EXTENSIONS = %w[.js .sh]
   STATUS = {
     'MISSING' => 0b01,
@@ -152,17 +152,21 @@ private
     if FileUtils.uptodate?(outfile, [file]) && !@force
       puts blue('[up to date]')
     else
+      recipients = gpg_users.
+        split(/\s*,\s*/).
+        map { |u| "--recipient #{escape u}"}.
+        join(' ')
       print green('[encrypting ...')
       execute(%{
         #{escape command_path('gpg')}
-          -a
-          -q
+          --armor
+          --quiet
           --batch
           --no-tty
           --yes
-          -r #{escape gpg_user}
-          -o #{escape outfile}
-          -e #{escape file}
+          #{recipients}
+          --output #{escape outfile}
+          --encrypt #{escape file}
       })
       if $?.success?
         puts green(' done]')
@@ -214,8 +218,8 @@ private
     })
   end
 
-  def gpg_user
-    ENV['GPG_USER'] || get_config('gpguser') || DEFAULT_GPG_USER
+  def gpg_users
+    ENV['GPG_USER'] || get_config('gpguser') || DEFAULT_GPG_USERS
   end
 
   def green(string)
