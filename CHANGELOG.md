@@ -1,4 +1,4 @@
-# master (not yet released)
+# main (not yet released)
 
 - Allow `command` check to work on Linux systems without a concrete `command` executable like macOS has.
 - GPG users may now be specified as a comma-separated list, which means that files can be encrypted such that they can be decrypted by multiple recipients.

@@ -200,7 +200,7 @@ This is minimal, currently with no tests, no Bundler, no Rakefile. To cut a new 
 
 ```sh
 git tag -s 0.2 -m "0.2 release"
-git push --follow-tags origin master
+git push --follow-tags origin main
 gem build git-cipher.gemspec
 gem push git-cipher-0.2.gem
 ```
