@@ -11,8 +11,9 @@ class Cipher
   DEFAULT_GPG_USERS  = 'greg@hurrell.net,wincent@github.com'
   EXECUTABLE_EXTENSIONS = %w[.js .sh]
   STATUS = {
-    'MISSING' => 0b01,
-    'MODIFIED' => 0b10,
+    'MISSING' => 0b001,
+    'MODIFIED' => 0b010,
+    'STALE' => 0b100,
   }
   VALID_OPTIONS = %w[force help]
   VALID_SUBCOMMANDS = %w[decrypt encrypt help log ls status]
@@ -298,7 +299,13 @@ private
           description = yellow('[MODIFIED]')
           exitstatus |= STATUS['MODIFIED']
         else
-          description = green('[OK]')
+          if (File.mtime(file) - File.mtime(outfile)) > 5
+            # Plain-text is signficantly older than ciphertext.
+            description = yellow('[STALE]')
+            exitstatus |= STATUS['STALE']
+          else
+            description = green('[OK]')
+          end
         end
       else
         description = red('[MISSING]')
@@ -450,8 +457,9 @@ private
           its subdirectories.
 
           Exits with status #{STATUS['MISSING']} if any decrypted file is missing.
-          Exits with status #{STATUS['MODIFIED']} if any decrypted file is modified.
-          Exits with status #{STATUS['MISSING'] | STATUS['MODIFIED']} if both of the above apply.
+          Exits with status #{STATUS['MODIFIED']} if any decrypted file has modifications.
+          Exits with status #{STATUS['STALE']} if any encrypted file has modifications.
+          When multiple conditions apply, they are OR-ed together to produce a status code.
       USAGE
     else
       puts strip_heredoc(<<-USAGE)
