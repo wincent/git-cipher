@@ -3,6 +3,7 @@
 - Allow `command` check to work on Linux systems without a concrete `command` executable like macOS has.
 - GPG users may now be specified as a comma-separated list, which means that files can be encrypted such that they can be decrypted by multiple recipients.
 - `status` now reports `[STALE]` for files whose decrypted content is out-of-date; this complements the `[MODIFIED]` status which applies to files whose encrypted content is out of date.
+- Commands no longer implicitly consider or operate on Git-ignored ciphertext files; it is still possible to operate on such files by providing explicit paths.
 
 # 1.0 (16 January 2019)
 

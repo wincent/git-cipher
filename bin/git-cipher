@@ -39,8 +39,7 @@ private
   end
 
   def check_ignored(path)
-    `#{escape command_path('git')} check-ignore -q #{escape path}`
-    puts "[warning: #{path} is not ignored]" unless $?.exitstatus.zero?
+    puts "[warning: #{path} is not ignored]" unless is_ignored?(path)
   end
 
   def colorize(string, color)
@@ -217,6 +216,11 @@ private
     colorize(string, 32)
   end
 
+  def is_ignored?(path)
+    `#{escape command_path('git')} check-ignore -q #{escape path}`
+    return $?.exitstatus.zero?
+  end
+
   def kill_line
     # 2K deletes the line, 0G moves to column 0
     # see: http://en.wikipedia.org/wiki/ANSI_escape_code
@@ -317,7 +321,9 @@ private
   end
 
   def matching
-    Dir.glob("**/*.#{EXTENSION}", File::FNM_DOTMATCH)
+    Dir.glob("**/*.#{EXTENSION}", File::FNM_DOTMATCH).reject do |candidate|
+      is_ignored?(candidate)
+    end
   end
 
   # Determine the appropriate mode for the given decrypted plaintext
