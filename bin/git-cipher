@@ -195,16 +195,6 @@ private
     value
   end
 
-  def get_passphrase
-    stty = escape(command_path('stty'))
-    print 'Passphrase [will not be echoed]: '
-    `#{stty} -echo` # quick hack, cheaper than depending on highline gem
-    STDIN.gets.chomp
-  ensure
-    `#{stty} echo`
-    puts
-  end
-
   def gpg_decrypt(file, outfile)
     execute(%{
       #{escape command_path('gpg')}
