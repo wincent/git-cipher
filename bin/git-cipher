@@ -462,9 +462,9 @@ private
           Shows the status of encrypted files in the current directory and
           its subdirectories.
 
-          Exits with status #{STATUS['MISSING']} if any decrypted file is missing.
-          Exits with status #{STATUS['MODIFIED']} if any decrypted file has modifications.
-          Exits with status #{STATUS['STALE']} if any encrypted file has modifications.
+          Exits with status #{STATUS['MISSING']} if any decrypted file is missing (eg. "MISSING").
+          Exits with status #{STATUS['MODIFIED']} if any decrypted file has modifications (eg. "MODIFIED").
+          Exits with status #{STATUS['STALE']} if any encrypted file has modifications (eg. "STALE").
           When multiple conditions apply, they are OR-ed together to produce a status code.
       USAGE
     else
