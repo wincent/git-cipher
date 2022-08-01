@@ -229,37 +229,36 @@ private
 
   def log
     if @files.empty?
-      # TODO: would be nice to interleave these instead of doing them serially.
       puts 'No explicit paths supplied: logging all matching files'
-      matching.each { |file| log!(file) }
+      log!(nil)
     else
-      @files.each { |file| log!(file) }
+      log!(@files)
     end
   end
 
-  def log!(file)
-    commits = execute(%{
-      #{escape command_path('git')} log
-      --pretty=format:%H -- #{escape file}
-    }).split
-    suffix = "-#{File.basename(file)}"
+  def log!(files)
+    if files.nil?
+      commits = execute(%{
+        #{escape command_path('git')} log
+        --pretty=format:%H
+        --topo-order
+        -- **/.*.#{EXTENSION}
+      }).split
+    else
+      # Would use `--follow` here, but that only works with a single file and, more
+      # importantly, all encrypted files look like random noise, so `--follow`
+      # won't do anything useful; log will stop at first rename.
+      commits = execute(%{
+        #{escape command_path('git')} log
+        --pretty=format:%H
+        --topo-order
+        -- #{files.map { |f| escape(f) }.join(' ')}
+      }).split
+    end
 
     commits.each do |commit|
-      files = []
+      tempfiles = []
       begin
-        # Get plaintext "post" image.
-        files.push(post = temp_write(show(file, commit)))
-        files.push(
-          post_plaintext = temp_write(gpg_decrypt(post.path, '-'), suffix)
-        )
-
-        # Get plaintext "pre" image.
-        files.push(pre = temp_write(show(file, "#{commit}~")))
-        files.push(pre_plaintext = temp_write(
-          pre.size.zero? ? '' : gpg_decrypt(pre.path, '-'),
-          suffix
-        ))
-
         # Print commit message.
         puts execute(%{
           #{escape command_path('git')} --no-pager log
@@ -267,17 +266,37 @@ private
         })
         puts
 
-        # Print pre-to-post diff.
-        puts execute(%{
-          #{escape command_path('git')} --no-pager diff
-          --color=always
-          #{escape pre_plaintext.path}
-          #{escape post_plaintext.path}
-        })
-        puts
+        # See which files changed in this commit.
+        changed = wc(commit, files).split("\0")
 
+        changed.each do |file|
+          suffix = "-#{File.basename(file)}"
+
+          # Get plaintext "post" image.
+          tempfiles.push(post = temp_write(show(file, commit)))
+          tempfiles.push(post_plaintext = temp_write(
+            post.size.zero? ? '' : gpg_decrypt(post.path, '-'),
+            suffix
+          ))
+
+          # Get plaintext "pre" image.
+          tempfiles.push(pre = temp_write(show(file, "#{commit}~")))
+          tempfiles.push(pre_plaintext = temp_write(
+            pre.size.zero? ? '' : gpg_decrypt(pre.path, '-'),
+            suffix
+          ))
+
+          # Print pre-to-post diff.
+          puts execute(%{
+            #{escape command_path('git')} --no-pager diff
+            --color=always
+            #{escape pre_plaintext.path}
+            #{escape post_plaintext.path}
+          })
+        end
+        puts
       ensure
-        files.each do |tempfile|
+        tempfiles.each do |tempfile|
           tempfile.close
           tempfile.unlink
         end
@@ -480,6 +499,21 @@ private
     end
 
     exit
+  end
+
+  # Show which files (out of `files`) changed in `commit`.
+  def wc(commit, files)
+    if files.nil?
+      execute(%{
+        #{escape command_path('git')} show --name-only --pretty=format: -z #{commit} --
+        **/.*.#{EXTENSION}
+      })
+    else
+      execute(%{
+        #{escape command_path('git')} show --name-only --pretty=format: -z #{commit} --
+        #{files.map { |f| escape(f) }.join(' ')}
+      })
+    end
   end
 
   def yellow(string)
