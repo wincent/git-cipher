@@ -1,3 +1,7 @@
+# main (not yet released)
+
+- In-progress rewrite.
+
 # 1.1 (2 August 2022)
 
 - Allow `command` check to work on Linux systems without a concrete `command` executable like macOS has.
