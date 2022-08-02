@@ -1,6 +1,6 @@
 {
   "name": "git-cipher",
-  "version": "2.0.0-pre.0",
+  "version": "2.0.0-pre.1",
   "bin": "./lib/main.mjs",
   "description": "Manages encrypted content in a Git repo",
   "main": "./lib/main.js",
