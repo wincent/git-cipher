@@ -1,6 +1,10 @@
-# main (not yet released)
+# next (not yet released)
 
 - In-progress rewrite.
+
+# 2.0.0-pre.0 (3 August 2022)
+
+- Published placeholder package ("blinking light" demo) to npm.
 
 # 1.1 (2 August 2022)
 
