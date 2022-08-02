@@ -2,6 +2,10 @@
 
 - In-progress rewrite.
 
+# 2.0.0-pre.1 (3 August 2022)
+
+- Republish with missing file included.
+
 # 2.0.0-pre.0 (3 August 2022)
 
 - Published placeholder package ("blinking light" demo) to npm.

@@ -1,8 +1,0 @@
-bin/
-scratch/
-src/
-vendor/
-.gitmodules
-.prettierignore
-.prettierrc
-tsconfig.json

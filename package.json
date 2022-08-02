@@ -1,7 +1,10 @@
 {
   "name": "git-cipher",
-  "version": "2.0.0-pre.1",
+  "version": "2.0.0-pre.2",
   "bin": "./lib/main.mjs",
+  "files": [
+    "lib"
+  ],
   "description": "Manages encrypted content in a Git repo",
   "main": "./lib/main.js",
   "repository": "https://github.com/wincent/git-cipher",
