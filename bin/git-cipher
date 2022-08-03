@@ -118,4 +118,4 @@ if [[ $BUILD -eq 1 ]]; then
   yarn run tsc
 fi
 
-"$N_EXE" run "$NODE_VERSION" "$MAIN" -- "$@"
+env __DEV__=1 "$N_EXE" run "$NODE_VERSION" "$MAIN" "$@"

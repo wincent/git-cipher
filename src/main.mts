@@ -5,91 +5,78 @@
  * SPDX-License-Identifier: MIT
  */
 
-import {readFile} from 'node:fs/promises';
-import {argv} from 'node:process';
+import assert from 'node:assert';
+import {argv, env} from 'node:process';
 
-import {
-  BLOCK_CIPHER_ALGORITHM,
-  decrypt,
-  deriveKey,
-  encrypt,
-  generateFileSalt,
-  generateKeySalt,
-  generateRandom,
-  generateRandomPassphrase,
-  mac,
-  verify,
-} from './crypto.mjs';
-import hex from './hex.mjs';
+const invocation: Invocation = {
+  options: {},
+  args: [],
+};
 
-const passphrase = await generateRandomPassphrase();
-console.log('pass', hex(passphrase));
+const SHORT_SWITCH = /^-[a-z]$/i;
+const SEPARATOR = '--';
+const LONG_SWITCH = /^--(?:no-)?(?:[a-z]+-)*(?:[a-z]+)$/;
+const LONG_OPTION = /^--(?:[a-z]+-)*(?:[a-z]+)=.+$/;
 
-const authenticationKey = await generateRandom();
+// Skip `node` executable + the `main.mjs` script.
+for (let i = 2; i < argv.length; i++) {
+  const arg = argv[i];
+  assert(arg);
+  if (arg === SEPARATOR) {
+    invocation.args.push(...argv.slice(i + 1));
+    break;
+  }
 
-const base = await generateRandom();
-console.log('base', hex(base));
+  console.log('testing', arg);
+  let match = arg.match(SHORT_SWITCH);
+  if (match) {
+    invocation.options[arg.slice(1)] = true;
+    continue;
+  }
 
-const keySalt = await generateKeySalt();
-console.log('keySalt', hex(keySalt));
+  match = arg.match(LONG_SWITCH);
+  if (match) {
+    if (arg.startsWith('--no-')) {
+      invocation.options[arg.slice(5)] = false;
+    } else {
+      invocation.options[arg.slice(2)] = true;
+    }
+    continue;
+  }
 
-const derived = await deriveKey(passphrase, keySalt);
-console.log('derived (1 of 2)', hex(derived));
+  match = arg.match(LONG_OPTION);
+  if (match) {
+    const [option, value] = arg.split('=', 2);
+    assert(option);
+    invocation.options[option.slice(2)] = value || true;
+    continue;
+  }
 
-// const derived2 = await deriveKey(passphrase, keySalt);
-// console.log('derived (2 of 2)', hex(derived2));
+  if (!invocation.command) {
+    invocation.command = arg;
+  } else {
+    invocation.args.push(arg);
+  }
+}
 
-const last = argv[argv.length - 1];
-const filename = last && !last.startsWith('-') ? last : 'package.json';
-console.log('filename', filename);
+if (!invocation.command) {
+  invocation.command = 'help';
+}
 
-const contents = await readFile(filename);
-console.log('contents', hex(contents));
+// TODO: based on subcommand, parse/validate options/args
+// eg. --build should be ignored but only in dev
+if (invocation.options['build'] === true && env['__DEV__']) {
+  // Ignoring build flag, which should only be passed in __DEV__
+  // (ie. from a local clone).
+  delete invocation.options['build'];
+}
 
-const salt = await generateFileSalt(filename, contents, base);
-console.log('salt (1 of 2)', hex(salt));
+console.log('invocation', invocation);
 
-// const salt2 = await generateFileSalt(filename, contents, base);
-// console.log('salt (2 of 2)', hex(salt2));
-
-const ciphertext = await encrypt(contents, derived, salt);
-console.log('ciphertext (1 of 2)', hex(ciphertext));
-
-// const ciphertext2 = await encrypt(contents, derived, salt);
-// console.log('ciphertext (2 of 2)', hex(ciphertext2));
-
-const theMac = await mac(filename, salt, ciphertext, authenticationKey);
-console.log('the mac', hex(theMac));
-
-const verifies = await verify(
-  theMac,
-  filename,
-  salt,
-  ciphertext,
-  authenticationKey
-);
-console.log('verifies?', verifies);
-
-const plaintext = await decrypt(ciphertext, derived, salt);
-console.log('plaintext (1 of 2)', hex(plaintext));
-
-// const plaintext2 = await decrypt(ciphertext, derived, salt);
-// console.log('plaintext (1 of 2)', hex(plaintext2));
-
-console.log(plaintext.toString('utf8'));
-
-const cleaned =
-  'magic = com.wincent.git-cipher\n' +
-  'url = https://github.com/wincent/git-cipher\n' +
-  'version = 1\n' +
-  'algorithm = ' +
-  BLOCK_CIPHER_ALGORITHM +
-  '\n' +
-  'iv = ' +
-  hex(salt) +
-  'ciphertext =\n' +
-  hex(ciphertext) +
-  'hmac = ' +
-  hex(theMac);
-
-console.log(cleaned);
+if (invocation.command === 'demo') {
+  const {execute} = await import('./commands/demo.mjs');
+  await execute(invocation);
+} else if (invocation.command === 'help') {
+  const {execute} = await import('./commands/help.mjs');
+  await execute(invocation);
+}
