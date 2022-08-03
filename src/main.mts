@@ -35,30 +35,6 @@ type Salt = {
 };
 */
 
-/**
- * This is the "mac" in "encrypt-then-mac".
- *
- * For why we use a different key for this, than we do for salt/IV generation,
- * see:
- *
- * https://crypto.stackexchange.com/a/8086
- */
-async function mac(
-  filename: string,
-  iv: Buffer,
-  ciphertext: Buffer,
-  key: Buffer
-): Promise<Buffer> {
-  return new Promise(async (resolve, _reject) => {
-    const secret = Buffer.concat([key, Buffer.from(filename)]);
-    const hmac = createHmac('sha256', secret);
-    const contents = Buffer.concat([iv, ciphertext]);
-    hmac.update(contents);
-    const digest = hmac.digest();
-    resolve(digest);
-  });
-}
-
 async function decrypt(
   contents: Buffer,
   key: Buffer,
@@ -96,6 +72,25 @@ async function encrypt(
     const final = cipher.final();
     resolve(Buffer.concat([initial, final]));
   });
+}
+
+/**
+ * Compares two equal-length buffers without short-circuiting on the first
+ * mismatch. The time taken to return `true`/`false` should be roughly
+ * proportional to the length of the buffers rather than to the length of the
+ * matching prefix.
+ *
+ * See: https://codahale.com/a-lesson-in-timing-attacks/
+ */
+function equal(a: Buffer, b: Buffer): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  let differences = 0;
+  for (let i = 0; i < a.length; i++) {
+    differences = differences | (a[i]! ^ b[i]!);
+  }
+  return differences === 0;
 }
 
 async function generateRandom(size: number = 32): Promise<Buffer> {
@@ -160,6 +155,30 @@ function hex(...buffers: Array<Buffer>): string {
 }
 
 /**
+ * This is the "mac" in "encrypt-then-mac".
+ *
+ * For why we use a different key for this, than we do for salt/IV generation,
+ * see:
+ *
+ * https://crypto.stackexchange.com/a/8086
+ */
+async function mac(
+  filename: string,
+  iv: Buffer,
+  ciphertext: Buffer,
+  key: Buffer
+): Promise<Buffer> {
+  return new Promise(async (resolve, _reject) => {
+    const secret = Buffer.concat([key, Buffer.from(filename)]);
+    const hmac = createHmac('sha256', secret);
+    const contents = Buffer.concat([iv, ciphertext]);
+    hmac.update(contents);
+    const digest = hmac.digest();
+    resolve(digest);
+  });
+}
+
+/**
  * The counterpart to `mac()`, you call this before decrypting to rule out
  * tampering.
  */
@@ -171,7 +190,7 @@ async function verify(
   key: Buffer
 ): Promise<boolean> {
   const actual = await mac(filename, iv, ciphertext, key);
-  return Buffer.compare(digest, actual) == 0;
+  return equal(digest, actual);
 }
 
 const passphrase = await generateRandomPassphrase();
