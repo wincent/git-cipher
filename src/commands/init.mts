@@ -3,17 +3,204 @@
  * SPDX-License-Identifier: MIT
  */
 
-import commonOptions from '../commonOptions.mjs';
+import assert from 'node:assert';
+import {chmod, open, mkdir, readFile} from 'node:fs/promises';
+import {join} from 'node:path';
+import {env} from 'node:process';
 
-// 1. set up .git-cipher directory to contain config
-//   might want user to be able to override this with a switch, in case they don't
-//   like the name
-// 2. decrypt committed key & salt (etc?)
-// 3. stash it in .git/com.wincent.git-cipher/...
-// 4. register up clean and smudge filters
+import Config from '../Config.mjs';
+import {isErrnoException} from '../assert.mjs';
+import commonOptions from '../commonOptions.mjs';
+import {
+  PROTOCOL_URL,
+  PROTOCOL_VERSION,
+  deriveKey,
+  generateKeySalt,
+  generateRandom,
+  generateRandomPassphrase,
+} from '../crypto.mjs';
+import dedent from '../dedent.mjs';
+import gpg from '../gpg.mjs';
+import hex from '../hex.mjs';
+import * as log from '../log.mjs';
+import {bin} from '../paths.mjs';
+import {describeResult} from '../run.mjs';
+import shellEscape from '../shellEscape.mjs';
+
+const __DEV__ = !!env['__DEV__'];
 
 export const description = 'what this thing does';
 
-export const options = {
+export const longDescription = `
+  long description here
+`;
+
+export async function execute(invocation: Invocation): Promise<number> {
+  const config = new Config();
+
+  if ((await config.topLevel()) === null) {
+    log.error('unable to determine repository top-level directory');
+    return 1;
+  }
+
+  const publicDirectory = await config.publicDirectory();
+  assert(publicDirectory);
+  await mkdir(publicDirectory, {recursive: true});
+
+  const encryptionPassphrase = await generateRandomPassphrase();
+  const encryptionKeySalt = await generateKeySalt();
+  const encryptionKey = await deriveKey(
+    encryptionPassphrase,
+    encryptionKeySalt
+  );
+  const authenticationPassphrase = await generateRandomPassphrase();
+  const authenticationKeySalt = await generateKeySalt();
+  const authenticationKey = await deriveKey(
+    authenticationPassphrase,
+    authenticationKeySalt
+  );
+  const salt = await generateRandom();
+
+  const secrets = JSON.stringify(
+    {
+      authenticationKey: hex(authenticationKey, 0),
+      encryptionKey: hex(encryptionKey, 0),
+      salt: hex(salt, 0),
+      url: PROTOCOL_URL,
+      version: PROTOCOL_VERSION,
+    },
+    null,
+    2
+  );
+
+  const defaultRecipients = optionsSchema['--recipients'].defaultValue;
+  const passedRecipients = invocation.options['--recipients'];
+  assert(typeof passedRecipients === 'string');
+  if (passedRecipients === defaultRecipients) {
+    log.warn(
+      `using default --recipients value of ${defaultRecipients}; pass something else to override`
+    );
+  }
+  const recipients = optionsSchema['--recipients'].process(passedRecipients);
+
+  let result = await gpg(
+    '--armor',
+    '--quiet',
+    '--batch',
+    '--no-tty',
+    '--yes',
+    ...recipients,
+    '--output',
+    '-',
+    '--encrypt',
+    {
+      stdin: secrets,
+    }
+  );
+  if (!result.success) {
+    log.error(describeResult(result));
+    return 1;
+  }
+
+  const publicSecretsPath = await config.publicSecretsPath();
+  assert(publicSecretsPath);
+  try {
+    // Try to write but error if already exists.
+    const file = await open(publicSecretsPath, 'wx');
+    file.write(result.stdout);
+  } catch (error) {
+    if (isErrnoException(error) && error.code === 'EEXIST') {
+      log.warn(`not writing ${publicSecretsPath} because it already exists`);
+      // TODO: offer to re-run with --force if you really want to overwrite
+    } else {
+      log.error(`failed to write file ${publicSecretsPath}: ${error}`);
+      return 1;
+    }
+  }
+
+  const tool = __DEV__
+    ? shellEscape(join(bin, 'git-cipher')) || 'git-cipher'
+    : 'git-cipher';
+
+  if (!(await config.initConfig(tool))) {
+    return 1;
+  }
+
+  const hooksPath = await config.hooksPath();
+  if (!hooksPath) {
+    log.error('cannot determine hooks path');
+    return 1;
+  }
+
+  const preCommitPath = join(hooksPath, 'pre-commit');
+  const hookContents = dedent(`
+    #!/bin/sh
+
+    ${tool} hook
+  `);
+  try {
+    // Try to write but error if already exists.
+    const file = await open(preCommitPath, 'wx');
+    file.write(hookContents);
+  } catch (error) {
+    if (isErrnoException(error) && error.code === 'EEXIST') {
+      // File already existed, was it different?
+      const contents = await readFile(preCommitPath, {encoding: 'utf8'});
+      if (contents !== hookContents) {
+        log.error(
+          `hook already exists at ${preCommitPath} with different contents; not overwriting`
+        );
+        // TODO: offer to overwrite with --force
+        return 0;
+      }
+    } else {
+      log.error(`failed to write file ${preCommitPath}: ${error}`);
+      return 1;
+    }
+  }
+
+  // TODO: only do this if we created the file, or its contents match what we
+  // want
+  await chmod(preCommitPath, 0o755);
+
+  return 0;
+}
+
+export const optionsSchema = {
   ...commonOptions,
-};
+  // '--passphrase': {
+  //   kind: 'option',
+  //   longDescription: '',
+  //   required: false,
+  //   shortDescription: '',
+  // },
+  // '--passphrase-method': {
+  //   allowedValues: ['arg', 'gpg', 'env', 'prompt'],
+  //   defaultValue: 'gpg',
+  //   kind: 'option',
+  //   longDescription: `
+  //   `,
+  //   required: false,
+  //   shortDescription: ''
+  // },
+  '--recipients': {
+    defaultValue: 'greg@hurrell.net,wincent@github.com',
+    kind: 'option',
+    longDescription: `
+      long description
+      here
+
+         usage example
+    `,
+    required: true,
+    shortDescription: 'short description',
+    process(value: string): Array<string> {
+      return value.split(',').flatMap(
+        // TODO: validate that recipients look like a GPG user id
+        (recipient) => {
+          return ['--recipient', recipient];
+        }
+      );
+    },
+  },
+} as const;

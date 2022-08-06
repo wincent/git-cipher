@@ -5,7 +5,6 @@
 
 import {Buffer} from 'node:buffer';
 import {promisify} from 'node:util';
-
 const {
   createCipheriv,
   createDecipheriv,
@@ -14,11 +13,17 @@ const {
   scrypt,
 } = await import('node:crypto');
 
+import {VERSION} from './version.mjs';
+
 const randomFill = promisify(randomFillAsync);
 
+export const PROTOCOL_URL = `https://github.com/wincent/git-cipher/blob/${VERSION}/PROTOCOL.md`;
+export const PROTOCOL_VERSION = 1;
 export const BLOCK_CIPHER_ALGORITHM = 'aes-256-cbc';
-const BLOCK_CIPHER_IV_SIZE = 16; // 16 bytes = 128 bits = block size.
-const BLOCK_CIPHER_KEY_SIZE = 32; // 32 bytes = 256 bits.
+
+export const BLOCK_CIPHER_HMAC_SIZE = 32; // 32 bytes = 256 bits.
+export const BLOCK_CIPHER_IV_SIZE = 16; // 16 bytes = 128 bits = block size.
+export const BLOCK_CIPHER_KEY_SIZE = 32; // 32 bytes = 256 bits.
 
 /**
  * Size of the `salt` parameter to `scrypt()`.
@@ -28,13 +33,6 @@ const BLOCK_CIPHER_KEY_SIZE = 32; // 32 bytes = 256 bits.
  * https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-132.pdf
  */
 const KEY_SALT_SIZE = 64; // 64 bytes = 512 bits.
-
-/*
-type Salt = {
-  filename: string,
-  extra: Buffer,
-};
-*/
 
 export async function decrypt(
   contents: Buffer,
@@ -58,7 +56,6 @@ export async function deriveKey(
       if (error) {
         reject(error);
       } else {
-        console.log(buffer.length);
         resolve(buffer);
       }
     });

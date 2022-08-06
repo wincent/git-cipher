@@ -40,7 +40,9 @@ YELLOW='\033[1;33m'
 
 # No associative arrays in Bash < v4, so can't do:
 #
-#   declare -A LOG_LEVEL
+#     declare -A LOG_LEVEL
+#
+# Instead, we do:
 #
 LOG_LEVEL_EMERGENCY=0
 LOG_LEVEL_ALERT=1
@@ -118,4 +120,4 @@ if [[ $BUILD -eq 1 ]]; then
   yarn run tsc
 fi
 
-env __DEV__=1 "$N_EXE" run "$NODE_VERSION" "$MAIN" "$@"
+exec env __DEV__=1 "$N_EXE" run "$NODE_VERSION" "$MAIN" "$@"

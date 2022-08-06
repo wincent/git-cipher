@@ -1,0 +1,2 @@
+examples/empty-file	diff=git-cipher	filter=git-cipher	merge=git-cipher
+examples/file	diff=git-cipher	filter=git-cipher	merge=git-cipher

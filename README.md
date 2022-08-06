@@ -4,7 +4,11 @@
 
 [![Gem Version](https://badge.fury.io/rb/git-cipher.svg)](http://badge.fury.io/rb/git-cipher)
 
-`git-cipher` is a utility script for encrypting sensitive files for storage in a public Git repo.
+git-cipher is a tool for encrypting sensitive files for storage in a public Git repo.
+
+> :warning: This documentation refers to version 2.0 of git-cipher, which is a NodeJS package and a complete rewrite from version 1.0, which was a Ruby script and used a different encryption protocol.
+>
+> For differences between version 1.0 and 2.0, please see [UPGRADING](UPGRADING.md). For more on version 1.0, please see [the `1-x-release` branch](https://github.com/wincent/git-cipher/tree/1-x-release).
 
 ## Usage
 
