@@ -4,6 +4,12 @@
 
 `git-cipher` is a utility script for encrypting sensitive files for storage in a public Git repo.
 
+> :warning: Note that the [`1-x-release`](https://github.com/wincent/git-cipher/tree/1-x-release) and [`1-x-devel`](https://github.com/wincent/git-cipher/tree/1-x-devel) branches correspond to version 1.x of `git-cipher`, which is in maintenance mode and may not receive updates in the future.
+>
+> New development occurs on the [`main`](https://github.com/wincent/git-cipher/tree/main) branch and corresponds to versions 2.x and above. Note that version 2.0 is a major new version with a different implementation (as a NodeJS package instead of a Ruby script) and an encryption protocol that is not backwards compatible with version 1.x.
+>
+> This README applies to version 1.x. Please see the `main` branch for [documentation pertaining to version 2.x and above](https://github.com/wincent/git-cipher/blob/main/README.md).
+
 ## Usage
 
 ```sh
