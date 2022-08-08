@@ -62,19 +62,24 @@ export default async function resetManagedFiles(
     log.debug(`removing ${absolute}`);
     await rm(absolute, {force: true});
   }
-  log.debug(`checking out ${managedFiles.join(', ')}`);
-  const result = await git(
-    '-C',
-    topLevel,
-    'checkout',
-    '--force',
-    'HEAD',
-    '--',
-    ...managedFiles
-  );
-  if (!result.success) {
-    log.error(describeResult(result));
-    return 1;
+
+  // Don't do force checkout unless there actually _are_ unmanaged files,
+  // otherwise it will blow away _all_ uncommitted changes in worktree.
+  if (managedFiles.length) {
+    log.debug(`checking out ${managedFiles.join(', ')}`);
+    const result = await git(
+      '-C',
+      topLevel,
+      'checkout',
+      '--force',
+      'HEAD',
+      '--',
+      ...managedFiles
+    );
+    if (!result.success) {
+      log.error(describeResult(result));
+      return 1;
+    }
   }
 
   return 0;
