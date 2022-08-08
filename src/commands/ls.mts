@@ -5,7 +5,7 @@
 
 import {readFile} from 'node:fs/promises';
 import {join, relative, resolve} from 'node:path';
-import {cwd} from 'node:process';
+import {cwd, stdout} from 'node:process';
 
 import Config from '../Config.mjs';
 import commonOptions from '../commonOptions.mjs';
@@ -63,11 +63,11 @@ export async function execute(invocation: Invocation): Promise<number> {
       const problematic = index === 'decrypted';
       const prefix = problematic ? `${log.BOLD}${log.RED}` : '';
       const suffix = problematic ? log.RESET : '';
-      log.printLine(
-        `${prefix}${relativePath} (index=${index}, worktree=${worktree})${suffix}`
+      stdout.write(
+        `${prefix}${relativePath} (index=${index}, worktree=${worktree})${suffix}\n`
       );
     } else {
-      log.printLine(relativePath);
+      stdout.write(`${relativePath}\n`);
     }
   }
 
