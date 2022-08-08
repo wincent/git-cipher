@@ -57,9 +57,6 @@ export default async function clean(
   );
 }
 
-// TODO expose `git-cipher is-encrypted <path>` that does this magic sniffing;
-// will be useful for my dotfiles
-
 // What we use to detect already-encrypted files.
 const MAGIC_REGEXP = /\s*\bmagic\s*=\s*com\.wincent\.git-cipher\b\s*/;
 

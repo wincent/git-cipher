@@ -137,7 +137,7 @@ TODO: actually document this
 
 ## `git-cipher is-encrypted`
 
-TODO: implement
+TODO: document
 
 ## `git-cipher clean` (encrypt)
 

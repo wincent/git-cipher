@@ -121,6 +121,10 @@ if (invocation.command === 'add') {
   const {execute, optionsSchema} = await import('./commands/init.mjs');
   invocation.options = parseOptions(invocation.options, optionsSchema);
   status = await execute(invocation);
+} else if (invocation.command === 'is-encrypted') {
+  const {execute, optionsSchema} = await import('./commands/is-encrypted.mjs');
+  invocation.options = parseOptions(invocation.options, optionsSchema);
+  status = await execute(invocation);
 } else if (invocation.command === 'lock') {
   const {execute, optionsSchema} = await import('./commands/lock.mjs');
   invocation.options = parseOptions(invocation.options, optionsSchema);
