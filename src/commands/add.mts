@@ -8,7 +8,9 @@ import {join, relative, resolve} from 'node:path';
 
 import Config from '../Config.mjs';
 import commonOptions from '../commonOptions.mjs';
+import git from '../git.mjs';
 import * as log from '../log.mjs';
+import {describeResult} from '../run.mjs';
 
 export const description = 'what this thing does';
 
@@ -84,7 +86,12 @@ export async function execute(invocation: Invocation): Promise<number> {
 
   await gitattributes.appendFile(needsNewline ? `\n${output}` : output);
 
-  // TODO add encrypted version to index
+  if (filesToAdd.length) {
+    const result = await git('add', '-N', '--', ...filesToAdd);
+    if (!result.success) {
+      log.error(describeResult(result));
+    }
+  }
 
   return 0;
 }
