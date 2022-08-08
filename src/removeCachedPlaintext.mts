@@ -8,7 +8,7 @@ import * as log from './log.mjs';
 import {describeResult} from './run.mjs';
 
 export default async function removeCachedPlaintext(): Promise<void> {
-  let result = await git('update ref', '-d', 'refs/notes/textconv/git-cipher');
+  let result = await git('update-ref', '-d', 'refs/notes/textconv/git-cipher');
   if (!result.success) {
     log.error(describeResult(result));
   }
