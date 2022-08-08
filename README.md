@@ -2,8 +2,6 @@
 
 # Introduction
 
-[![Gem Version](https://badge.fury.io/rb/git-cipher.svg)](http://badge.fury.io/rb/git-cipher)
-
 git-cipher is a tool for encrypting sensitive files for storage in a public Git repo.
 
 > :warning: This documentation refers to version 2.0 of git-cipher, which is a NodeJS package and a complete rewrite from version 1.0, which was a Ruby script and used a different encryption protocol.
@@ -13,56 +11,17 @@ git-cipher is a tool for encrypting sensitive files for storage in a public Git 
 ## Usage
 
 ```sh
-git cipher decrypt [FILES...] # decrypts files
-git cipher encrypt [FILES...] # encrypts files
-git cipher log [FILES...]     # shows log with (plaintext) diffs
-git cipher ls                 # lists encrypted files
-git cipher status             # shows decrypted/modified/missing status
+git cipher init
+git cipher unlock
+git cipher add
+git cipher ls
+git cipher lock
 git cipher help
 ```
 
 ## Commands
 
 TODO: instead of documenting this exhaustively here, do it in the build-in help for each command; we can link to it from here.
-
-### `git-cipher init`
-
-To prepare a repository to use git-cipher for the first time:
-
-```
-git-cipher init
-```
-
-To prepare a local clone of a previously initialized repository:
-
-```
-git-cipher init
-```
-
-To check that an existing clone has been appropriately initialized:
-
-```
-git-cipher init
-```
-
-To keep existing secrets but change the list of recipients that have access to those secrets:
-
-```
-git-cipher unlock
-git-cipher init --force --recipients <user1>,<user2>
-```
-
-(ie. the `unlock` ensures we have a local copy of the secrets, the `--force` allows us to overwrite the in-tree `.git-cipher/secrets.asc.json` file with those secrets, encrypted using the new public keys associated with `--recipients`.)
-
-To generate new secrets (re-encrypting everything) while retaining access to existing managed files:
-
-```
-git-cipher unlock
-rm .git/git-cipher/secrets.json
-git-cipher init --force
-```
-
-(ie. the `--unlock` ensures we have local copies of the decrypted plaintext, the `rm` throws away the old secrets, and `--force` overwrites the in-tree `.git-cipher/secrets.asc.json` file with the new secrets.)
 
 ## Installation
 
@@ -87,33 +46,6 @@ brew install git gnupg gpg-agent
 ```
 
 ## Configuration
-
-### Selecting a key for encryption and decryption
-
-`git-cipher` will encrypt files using a recipient key (public). Only the recipient can decrypt the files (using their private key). It is possible to select multiple, comma-separated recipients such that any one of them can decrypt the files, using their own key.
-
-There are three ways to override the default recipient key (which is `greg@hurrell.net,wincent@github.com` and therefore probably not useful to anybody other than me):
-
-#### 1. Set the `GPG_USER` environment variable
-
-```sh
-GPG_USER=jane@example.com git cipher decrypt
-
-# or alternatively:
-export GPG_USER=jane@example.com
-git cipher decrypt
-```
-
-#### 2. Use `git-config` to set `cipher.gpguser`
-
-```sh
-git config cipher.gpguser jane@example.com # per-repo
-git config --global cipher.gpguser jane@example.com # globally
-```
-
-#### 3. Edit `DEFAULT_GPG_USERS` in the `git-cipher` source
-
-This last may be appropriate if you've installed by cloning the Git repo.
 
 ## Usage on Arch Linux
 
@@ -201,26 +133,6 @@ S KEYINFO 0551973D09... D - - 1 P - - -
 S KEYINFO 2529B67D84... D - - - P - - -
 ```
 
-## Architecture
-
-This section describes the background and rationale for the design of `git-cipher`.
-
-`git-cipher` was originally developed within the context of an [Ansible](https://github.com/ansible/ansible/)-powered configuration repo. Some of the files contained sensitive information so I couldn't commit them to the repo as plaintext, but I did still want to version control them, so needed to encrypt them prior to committing.
-
-At the time (prior to version 1.5) Ansible didn't have the Vault feature (equivalent to Chef's encrypted data bags), so the `git-cipher` was developed. When the Vault feature did arrive, I decided to continue using `git-cipher` because I liked the convenience of being able to work using my normal editor and Ansible workflow (Vault requires you to edit files through the `ansible-vault` command, and pass special arguments to `ansible-playbook` when running playbooks).
-
-`git-cipher` stores encrypted versions of sensitive files in the Git repo with an `.encrypted` file extension. Before running Ansible commands, we decrypt the necessary files with `git cipher decrypt`. This works well because Ansible doesn't employ a client-server architecture like Chef or Puppet; it suffices to have the decrypted files available on the local machine where the repo is checked out and the commands are run.
-
-The plain-text versions of the encrypted files should be ignored via the gitignore mechanism (although that is only a recommendation and `git-cipher` does nothing to enforce the policy, beyond printing a warning when it sees that the plaintext version of an encrypted file is not being ignored).
-
-This approach compares to using [`git encrypt`](https://github.com/shadowhand/git-encrypt) as recommended in ["An example of provisioning and deployment with Ansible"](http://www.stavros.io/posts/example-provisioning-and-deployment-ansible/). There are a couple of problems with that approach; one is that it uses ["deterministic encryption"](http://syncom.appspot.com/papers/git_encryption.txt) in the name of convenience, while noting that it is insecure. Additionally, [a lengthy thread on the Git mailing list](http://thread.gmane.org/gmane.comp.version-control.git/113124) argues that this is an abuse of the clean/smudge filtering system.
-
-We use semantically secure GPG encryption and make use of timestamp comparisons to avoid unnecessary churn (in other words, we only update the encrypted version of a file if the plain text version is newer). Note that we effectively trust the local system's integrity, relying on filesystem encryption, filesystem permissions, and the general security of the system to keep the plain-text safe. Also note that, like the clean/smudge filtering, we are effectively forgoing some of the niceties that Git offers (compression, meaningful diffs etc) in exchange for security. (But note: you can also split your encrypted content across smaller individual files and then pull the values from those files into a template, preserving the ability to get meaningful diffs of the template files themselves. The `log` subcommand also goes some way towards providing visualization of change over time in encrypted files.)
-
-For an example of `git-cipher` usage in the wild, see files like [this one](https://github.com/wincent/wincent/blob/098b487c495ffa22135df7f4b28ad5006d1965b2/roles/ssh/files/.ssh_config.encrypted) in [my dotfiles repo](https://github.com/wincent/wincent). Others in that repo can be found by searching for files with the `.encrypted` suffix.
-
-Although `git-cipher` can be obtained as a RubyGem, the executable itself is, by-design, a single file. This is to reduce the dependency footprint, making it more suitable for use in boot-strapped environments (which might not have RubyGems installed yet).
-
 ## Tips
 
 You may see prompts like the following, depending on the trust level of your signing key:
@@ -253,7 +165,3 @@ git push --follow-tags origin main
 gem build git-cipher.gemspec
 gem push git-cipher-0.2.gem
 ```
-
-## License
-
-`git-cipher` is licensed under the MIT license. See the `LICENSE.txt` file in the `git-cipher` repo for more details.

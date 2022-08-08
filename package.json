@@ -3,6 +3,7 @@
   "version": "2.0.0-pre.2",
   "bin": "./lib/main.mjs",
   "files": [
+    "docs",
     "lib"
   ],
   "description": "Manages encrypted content in a Git repo",
