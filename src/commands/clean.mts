@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: MIT
  */
 
-import assert from 'node:assert';
 import {Buffer} from 'node:buffer';
 import {stdin, stdout} from 'node:process';
 
@@ -57,7 +56,12 @@ export async function execute(invocation: Invocation): Promise<number> {
   }
 
   const secrets = await config.readPrivateSecrets();
-  assert(secrets);
+  if (!secrets) {
+    log.error(
+      'cannot clean without secrets; do you need to run `git-cipher unlock`?'
+    );
+    return 1;
+  }
   const output = await clean(input, filename, secrets);
   stdout.write(output);
 

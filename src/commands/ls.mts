@@ -28,6 +28,10 @@ export const longDescription = `
       git-cipher ls .
 `;
 
+// TODO: this should print to stdout, just like `ls`
+// in general, there may be a bit of non-error output in various subcommands
+// that would be better off going to stdout (but not all of it;
+// clean/smudge/textconv, for example, definitely need to keep stdout clean)
 export async function execute(invocation: Invocation): Promise<number> {
   const filters = invocation.args.map((arg) => {
     return resolve(arg);

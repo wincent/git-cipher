@@ -5,6 +5,13 @@
 
 import assert from 'node:assert';
 
+export function assertHasKey<
+  O extends {[key: PropertyKey]: unknown},
+  K extends PropertyKey
+>(object: O, key: K): asserts object is O & Record<K, unknown> {
+  assert(hasKey(object, key));
+}
+
 export function assertIsObject(
   value: unknown
 ): asserts value is {[key: string]: unknown} {

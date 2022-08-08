@@ -21,6 +21,49 @@ git cipher status             # shows decrypted/modified/missing status
 git cipher help
 ```
 
+## Commands
+
+TODO: instead of documenting this exhaustively here, do it in the build-in help for each command; we can link to it from here.
+
+### `git-cipher init`
+
+To prepare a repository to use git-cipher for the first time:
+
+```
+git-cipher init
+```
+
+To prepare a local clone of a previously initialized repository:
+
+```
+git-cipher init
+```
+
+To check that an existing clone has been appropriately initialized:
+
+```
+git-cipher init
+```
+
+To keep existing secrets but change the list of recipients that have access to those secrets:
+
+```
+git-cipher unlock
+git-cipher init --force --recipients <user1>,<user2>
+```
+
+(ie. the `unlock` ensures we have a local copy of the secrets, the `--force` allows us to overwrite the in-tree `.git-cipher/secrets.asc.json` file with those secrets, encrypted using the new public keys associated with `--recipients`.)
+
+To generate new secrets (re-encrypting everything) while retaining access to existing managed files:
+
+```
+git-cipher unlock
+rm .git/git-cipher/secrets.json
+git-cipher init --force
+```
+
+(ie. the `--unlock` ensures we have local copies of the decrypted plaintext, the `rm` throws away the old secrets, and `--force` overwrites the in-tree `.git-cipher/secrets.asc.json` file with the new secrets.)
+
 ## Installation
 
 `git-cipher` is a single Ruby script with no major dependencies beyond [Ruby](https://www.ruby-lang.org/), [Git](http://git-scm.com/), and [GnuPG](https://www.gnupg.org/). As such, it can be run directly from the repo:

@@ -30,6 +30,13 @@ export async function execute(invocation: Invocation): Promise<number> {
     log.warn('proceeding without list of managed files');
   }
 
+  // BUG: if you run `git-cipher add foo` twice, line will be added twice
+  // if you run it once, then `git add foo`, then run it again, it won't be
+  // added a second time; this is because of how we ask Git our question, and
+  // Git is only going to tell us about tracked files
+  // TODO: see if `git ls-files --others` would help here (would have to invoke
+  // it separately, because with `--others`, we don't show tracked files)
+
   const topLevel = await config.topLevel();
   if (!topLevel) {
     log.error('cannot do `add` operation without top-level');
@@ -39,6 +46,7 @@ export async function execute(invocation: Invocation): Promise<number> {
   const filesToAdd = [];
   const managedFilesSet = new Set(managedFiles);
   for (const file of invocation.args) {
+    // TODO: if argument is not a file but a directory, add recursively? (or at least error)
     const normalized = relative(topLevel, resolve(file));
     if (managedFilesSet.has(normalized)) {
       log.info(`file ${file} is already managed by git-cipher`);
@@ -53,7 +61,9 @@ export async function execute(invocation: Invocation): Promise<number> {
   const output = filesToAdd
     .map(
       (file) =>
-        `${quotePath(file)}\tdiff=git-cipher\tfilter=git-cipher\tmerge=git-cipher\n`
+        `${quotePath(
+          file
+        )}\tdiff=git-cipher\tfilter=git-cipher\tmerge=git-cipher\n`
     )
     .join('');
 
@@ -80,14 +90,12 @@ export async function execute(invocation: Invocation): Promise<number> {
 }
 
 function quotePath(path: string): string {
-  const escaped = path
-    .replace(/\\/g, '\\\\')
-    .replace(/"/g, '\\"');
+  const escaped = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 
   if (escaped === path && !path.includes(' ')) {
     return path;
   } else {
-    return  `"${escaped}"`;
+    return `"${escaped}"`;
   }
 }
 

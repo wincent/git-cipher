@@ -35,7 +35,9 @@ export async function execute(invocation: Invocation): Promise<number> {
 
   const secrets = await config.readPrivateSecrets();
   if (!secrets) {
-    log.error('git-cipher merge driver cannot operate without secrets');
+    log.error(
+      'git-cipher merge driver cannot operate without secrets; do you need to run `git-cipher unlock`?'
+    );
     return 0;
   }
 

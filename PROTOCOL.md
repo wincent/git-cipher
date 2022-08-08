@@ -23,7 +23,7 @@ This layer of indirection has a couple of benefits. Firstly, one is free to do t
 
 While every effort has been made to produce a correct and robust implementation, as noted above, git-cipher is not intended to safeguard high-value secrets. While it is possible to generate new secrets and then use them to re-encrypt the contents of the repo, the immutable nature of Git means that anybody who had access to the prior history of the repo will continue to have access to that portion of it, provided they've retained their private keys (either their GPG key, to access the old secrets, or an existing checkout with a copy of the old secrets still on disk). As such, git-cipher is not really intended to support team access patterns in which members come and go, and have their access revoked when they leave.
 
-In typical usage, git-cipher is used by a trusted developer to protect their own files in repos that they alone can write to. Encryption only happens in an unlocked repo (ie. it depends on the presence of secrets) and in response to explicit developer actions (ie. the decision to add a file to the list of files managed by git-cipher, and the subsequent decision to commit the contents using `git commit`).  This means that:
+In typical usage, git-cipher is used by a trusted developer to protect their own files in repos that they alone can write to. Encryption only happens in an unlocked repo (ie. it depends on the presence of secrets) and in response to explicit developer actions (ie. the decision to add a file to the list of files managed by git-cipher, and the subsequent decision to commit the contents using `git commit`). This means that:
 
 - We don't need to grant more than passing consideration to [chosen plaintext attacks](https://en.wikipedia.org/wiki/Chosen-plaintext_attack) (only the developer ever chooses plaintext, in the absence of some esoteric workflow that has them accepting snippets of plaintext for encryption).
 - Under some circumstances, we may have to consider [known plaintext attacks](https://en.wikipedia.org/wiki/Known-plaintext_attack), wherein the attacker can guess or otherwise obtain the contents of an encrypted file; in practical terms, the feasibility of such attacks depends very much on usage. Given that filenames are public, attackers may be able to infer something about at least part of the possible contents of a ciphertext: for example, an encrypted file named `.netrc` may very well contain substrings such as `login` and `password`.
@@ -73,20 +73,20 @@ This is the procedure followed to prepare a repository for working with git-ciph
 
 1. Abort if the current working directory is not part of a (non-bare) Git repository.
 2. Create a `.git-cipher` folder at the repository root, if it does not exist already.
-3. If a non-empty file does not already exist at `.git-cipher/secrets.json.asc`:
+3. If secrets already exist at `.git/git-cipher/secrets.json` (ie. because the user has run `git-cipher unlock`, use those; otherwise, perform steps 4 through 8.
 4. Generate a 256-bit (32-byte) encryption passphrase using a CSPRNG.
 5. Generate a 512-bit (64-byte) salt using a CSPRNG.
 6. Derive a 256-bit (32-byte) encryption key from the passphrase and salt using the `scrypt` derivation function and default parameters[^scrypt]. At this point the passphrase and salt are discarded.
 7. Repeat steps 2 through 4 to produce a 256-bit (32-byte) authentication key.
 8. Generate a 256-bit (32-byte) salt using a CSPRNG.
-9. If we're performing this set-up for the first time, we will produce a file containing the new secrets. If we already have secrets by are wishing to re-encrypt them in order to change the set of GPG keys which have access to them, we need first retrieve the secrets (previously made available with a call to `git-cipher unlock`). Construct a JSON representation of the authentication key, the encryption key, the salt, and a couple of additional fields, then encrypt it using `gpg` and commit the result to the repository at `.git-cipher/secrets.json.asc`. The additional fields are not required for encryption or decryption, and are merely informative; they are `version`, a positive integer describing the version of this PROTOCOL document that the implementation used to produce the file, and `url`, a link to the document.
+9. If we're performing this set-up for the first time, we will produce a file containing the new secrets. If we already have secrets by are wishing to re-encrypt them in order to change the set of GPG keys which have access to them, we use the existing secrets (previously made available with a call to `git-cipher unlock`). Construct a JSON representation of the authentication key, the encryption key, the salt, and a couple of additional fields, then encrypt it using `gpg` and commit the result to the repository at `.git-cipher/secrets.json.asc`. The additional fields are not required for encryption or decryption, and are merely informative; they are `version`, a positive integer describing the version of this PROTOCOL document that the implementation used to produce the file, and `url`, a link to the document.
 10. Use `git config filter.git-cipher.clean <command>` and `git config filter.git-cipher.smudge <command>` to configure the repo to use `git-cipher` to transparently encrypt and decrypt files. The exact `<command>` that will be configured depends on whether `git-cipher` is running from a local checkout (in which case, the command will be an absolute path pointing at the local copy) or from a global install running out of `$PATH` (in which case it will either be `git cipher clean` or `git cipher smudge`).
 11. Install pre-commit hook to report problems if unencrypted plain-text has been staged.
 
 Observations:
 
 - We use one key for encryption and one key for HMAC authentication [not because we have to, but because we can](https://stackoverflow.com/a/2504628/2103996).
-- Likewise, we use `scrypt` for key derivation rather than simply using bytes from the CSPRNG because in the future, we may wish to offer the ability to derive a key from a user-supplied passphrase (for example, to enable a mode of operation that did not depend on `gpg`; note that this would require some plan for storing the related salts without the aid GPG).
+- Likewise, we use `scrypt` for key derivation rather than simply using bytes from the CSPRNG because in the future, we may wish to offer the ability to derive a key from a user-supplied passphrase (for example, to enable a mode of operation that did not depend on `gpg`; note that this would require some us to generate a single, larger "key" using `scrypt` and then split it up into segments, providing us with an encryption key, an authentication key, and a salt).
 
 [^scrypt]: At the time of writing, [the default parameters](https://nodejs.org/api/crypto.html#cryptoscryptpassword-salt-keylen-options-callback) are a CPU/memory cost parameter of 16,384, a block size of 8, a parallelization factor of 1, and a maximum memory bound of 33,554,432 (32 &times; 1024 &times; 1024).
 
@@ -135,6 +135,10 @@ Lists files under management by git-cipher. A similar effect can be achieved by 
 
 TODO: actually document this
 
+## `git-cipher is-encrypted`
+
+TODO: implement
+
 ## `git-cipher clean` (encrypt)
 
 This command can be run manually for debugging purposes, but in normal usage, it will be invoked automatically by Git's "clean" filter functionality. It's job is to ensure that contents in the worktree get encrypted using the secrets at `.git/git-cipher/secrets.json` (ie. the repository must be unlocked with `git-cipher unlock` in order for this to work).
@@ -179,9 +183,7 @@ Observations:
 
 ## `git-cipher smudge` (decrypt)
 
-## `git-cipher register`
-
-## `git-cipher unregister`
+---
 
 TODO: describe what we do if somebody does `git mv` on an encrypted file (really, relying on the hook to catch that)
 

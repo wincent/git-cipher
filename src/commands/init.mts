@@ -47,31 +47,58 @@ export async function execute(invocation: Invocation): Promise<number> {
   assert(publicDirectory);
   await mkdir(publicDirectory, {recursive: true});
 
-  const encryptionPassphrase = await generateRandomPassphrase();
-  const encryptionKeySalt = await generateKeySalt();
-  const encryptionKey = await deriveKey(
-    encryptionPassphrase,
-    encryptionKeySalt
-  );
-  const authenticationPassphrase = await generateRandomPassphrase();
-  const authenticationKeySalt = await generateKeySalt();
-  const authenticationKey = await deriveKey(
-    authenticationPassphrase,
-    authenticationKeySalt
-  );
-  const salt = await generateRandom();
+  // Grab existing secrets if we're in a `git-cipher unlock`-ed repository.
+  let secrets = await (async () => {
+    try {
+      const secrets = await config.readPrivateSecrets();
+      if (secrets) {
+        log.notice('preserving existing secrets');
+        return JSON.stringify(
+          {
+            ...secrets,
+            url: PROTOCOL_URL,
+            version: PROTOCOL_VERSION,
+          },
+          null,
+          2
+        );
+      } else {
+        return null;
+      }
+    } catch {
+      return null;
+    }
+  })();
 
-  const secrets = JSON.stringify(
-    {
-      authenticationKey: hex(authenticationKey, 0),
-      encryptionKey: hex(encryptionKey, 0),
-      salt: hex(salt, 0),
-      url: PROTOCOL_URL,
-      version: PROTOCOL_VERSION,
-    },
-    null,
-    2
-  );
+  // Otherwise generate new secrets.
+  if (!secrets) {
+    log.warn('generating new secrets; these will REPLACE any existing secrets');
+    const encryptionPassphrase = await generateRandomPassphrase();
+    const encryptionKeySalt = await generateKeySalt();
+    const encryptionKey = await deriveKey(
+      encryptionPassphrase,
+      encryptionKeySalt
+    );
+    const authenticationPassphrase = await generateRandomPassphrase();
+    const authenticationKeySalt = await generateKeySalt();
+    const authenticationKey = await deriveKey(
+      authenticationPassphrase,
+      authenticationKeySalt
+    );
+    const salt = await generateRandom();
+
+    secrets = JSON.stringify(
+      {
+        authenticationKey: hex(authenticationKey, 0),
+        encryptionKey: hex(encryptionKey, 0),
+        salt: hex(salt, 0),
+        url: PROTOCOL_URL,
+        version: PROTOCOL_VERSION,
+      },
+      null,
+      2
+    );
+  }
 
   const defaultRecipients = optionsSchema['--recipients'].defaultValue;
   const passedRecipients = invocation.options['--recipients'];
@@ -105,13 +132,14 @@ export async function execute(invocation: Invocation): Promise<number> {
   const publicSecretsPath = await config.publicSecretsPath();
   assert(publicSecretsPath);
   try {
-    // Try to write but error if already exists.
-    const file = await open(publicSecretsPath, 'wx');
+    const mode = invocation.options['--force'] ? 'w' : 'wx';
+    const file = await open(publicSecretsPath, mode);
     file.write(result.stdout);
   } catch (error) {
     if (isErrnoException(error) && error.code === 'EEXIST') {
-      log.warn(`not writing ${publicSecretsPath} because it already exists`);
-      // TODO: offer to re-run with --force if you really want to overwrite
+      log.warn(
+        `not writing ${publicSecretsPath} because it already exists; re-run with --force to overwrite`
+      );
     } else {
       log.error(`failed to write file ${publicSecretsPath}: ${error}`);
       return 1;
@@ -183,10 +211,21 @@ export const optionsSchema = {
   //   required: false,
   //   shortDescription: ''
   // },
+  '--force': {
+    defaultValue: false,
+    kind: 'switch',
+    longDescription: `
+      Overwrites any existing secrets at \`.git-cipher/secrets.asc.json\`.
+    `,
+    required: false,
+    shortDescription: 'overwrite existing secrets',
+  },
   '--recipients': {
     defaultValue: 'greg@hurrell.net,wincent@github.com',
     kind: 'option',
     longDescription: `
+      comma-separated list
+
       long description
       here
 

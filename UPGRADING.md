@@ -37,7 +37,7 @@ Under the covers, this is using [NodeJS's `crypto` module](https://nodejs.org/ap
 
 In terms of security, 2.x is using OpenSSL (albeit indirectly). Unlike GnuPG, OpenSSL doesn't really qualify for the "fool-proof" label. There is scope for making a fundamental design or implementation flaw when using OpenSSL which would land squarely within the territory of "mistakes due to rolling your own crypto". This is especially so in the case of git-cipher, which not only uses AES-256 in CBC mode, but which jumps through some additional hoops in order to produce a deterministic encryption result by using an "effectively but not actually random" IV. While there is some precedent for this kind of approach in other projects such as [git-crypt](https://github.com/AGWA/git-crypt) and [transcrypt](https://github.com/elasticdog/transcrypt), the security of the approach is by no means guaranteed.
 
-As such, all of the disclaimers that applied to 1.x in terms of security of secrets at rest and so on _also_ apply to 2.x, with the additional concerns that the implementation in 2.x is considerably more complex, newer, and uses a less heavily-vetted cryptographic construction and supporting scaffolding. Overall, this qualifies 2.x, emphatically, as suitable only for providing a degree of protection for the lowest-value secrets. As the [LICENSE][LICENSE.md] says, this software is provided without warranty of any kind.
+As such, all of the disclaimers that applied to 1.x in terms of security of secrets at rest and so on _also_ apply to 2.x, with the additional concerns that the implementation in 2.x is considerably more complex, newer, and uses a less heavily-vetted cryptographic construction and supporting scaffolding. Overall, this qualifies 2.x, emphatically, as suitable only for providing a degree of protection for the lowest-value secrets. As the [LICENSE](LICENSE.md) says, this software is provided without warranty of any kind.
 
 ## Upgrade procedure
 
@@ -56,6 +56,6 @@ In this example, we'll assume that the git-cipher repository is checked out in a
 9. Add the encrypted secrets at `.git-cipher/secrets.json.asc` with `git add`.
 10. Start managing plaintext files with `vendor/bin/git-cipher add <file...>`.
 11. Remove old encrypted files from 1.x (ie. files with names of the form `.<base>.encrypted`) with `git rm`.
-11. Add and commit the results (using `git add` and `git commit`).
+12. Add and commit the results (using `git add` and `git commit`).
 
 If everything is set up correctly, commands like Git should show the plaintext of the protected files when using commands like `git show` and `git log -p`, but this is merely a presentational convenience that applies when you've run `git-cipher unlock`. To confirm that the committed files are _actually_ stored as ciphertext, you can run `git-cipher lock` and then re-run the `git show` or `git log -p` command. Alternatively, you can bypass the presentational aids with `git -c diff.git-cipher.textconv=cat -c diff.git-cipher.binary=false show --no-textconv -- <file>` (or the equivalent, substituting `log -p` for `show`). As a convenience, git-cipher provides `diff`, `log`, and `show` subcommands for streamlining this kind of inspection; invoke these with a `--reveal` switch to show ciphertext as it actually exists in Git object storage.

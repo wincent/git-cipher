@@ -7,7 +7,7 @@ import assert from 'node:assert';
 import {chmod, mkdir, readFile, rm, writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
 
-import {isErrnoException} from './assert.mjs';
+import {isErrnoException, assertHasKey, assertIsObject} from './assert.mjs';
 import git from './git.mjs';
 import gpg from './gpg.mjs';
 import * as log from './log.mjs';
@@ -217,9 +217,7 @@ export default class Config {
       return null;
     }
     const secrets = JSON.parse(result.stdout.toString());
-    assert(secrets.authenticationKey);
-    assert(secrets.encryptionKey);
-    assert(secrets.salt);
+    assertIsSecrets(secrets);
     return {
       authenticationKey: secrets.authenticationKey,
       encryptionKey: secrets.encryptionKey,
@@ -233,14 +231,11 @@ export default class Config {
     log.debug(`reading ${privateSecretsPath}`);
     try {
       const secrets = await readFile(privateSecretsPath);
-      return JSON.parse(secrets.toString());
+      const parsed = JSON.parse(secrets.toString());
+      assertIsSecrets(parsed);
+      return parsed;
     } catch (error) {
-      if (isErrnoException(error) && error.code === 'ENOENT') {
-        // TODO: decide whether we want to do this kind of logging higher up
-        log.error(
-          `no file at ${privateSecretsPath}; did you need to run \`git-cipher unlock\`?`
-        );
-      } else {
+      if (!isErrnoException(error) || error.code !== 'ENOENT') {
         throw error;
       }
     }
@@ -303,4 +298,15 @@ export default class Config {
     );
     await chmod(privateSecretsPath, 0o600);
   }
+}
+
+function assertIsSecrets(value: unknown): asserts value is Secrets {
+  // TODO: may want to assert more about this (format, length)
+  assertIsObject(value);
+  assertHasKey(value, 'authenticationKey');
+  assertHasKey(value, 'encryptionKey');
+  assertHasKey(value, 'salt');
+  assert(typeof value.authenticationKey === 'string');
+  assert(typeof value.encryptionKey === 'string');
+  assert(typeof value.salt === 'string');
 }
