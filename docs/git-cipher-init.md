@@ -36,4 +36,3 @@ git-cipher init --force
 ```
 
 (ie. the `--unlock` ensures we have local copies of the decrypted plaintext, the `rm` throws away the old secrets, and `--force` overwrites the in-tree `.git-cipher/secrets.asc.json` file with the new secrets.)
-

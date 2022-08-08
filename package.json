@@ -17,8 +17,8 @@
     "typescript": "4.7.4"
   },
   "scripts": {
-    "format:check": "npx -y prettier --check \"**/*.mts\" \"*.{md,json}\"",
-    "format": "npx -y prettier --write \"**/*.mts\" \"*.{md,json}\""
+    "format:check": "npx -y prettier --check \"**/*.{md,mts}\" \"*.{md,json}\"",
+    "format": "npx -y prettier --write \"**/*.{md,mts}\" \"*.{md,json}\""
   },
   "type": "module"
 }
