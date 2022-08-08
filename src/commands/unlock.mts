@@ -3,6 +3,9 @@
  * SPDX-License-Identifier: MIT
  */
 
+import assert from 'node:assert';
+import {chmod} from 'node:fs/promises';
+
 import Config from '../Config.mjs';
 import commonOptions from '../commonOptions.mjs';
 import * as log from '../log.mjs';
@@ -37,6 +40,10 @@ export async function execute(invocation: Invocation): Promise<number> {
   await config.unlockConfig();
 
   await config.writePrivateSecrets(secrets);
+
+  const topLevel = await config.topLevel();
+  assert(topLevel);
+  await chmod(topLevel, 0o700);
 
   await removeCachedPlaintext();
 
