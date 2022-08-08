@@ -53,7 +53,7 @@ export async function execute(invocation: Invocation): Promise<number> {
   const output = filesToAdd
     .map(
       (file) =>
-        `${file}\tdiff=git-cipher\tfilter=git-cipher\tmerge=git-cipher\n`
+        `${quotePath(file)}\tdiff=git-cipher\tfilter=git-cipher\tmerge=git-cipher\n`
     )
     .join('');
 
@@ -77,6 +77,18 @@ export async function execute(invocation: Invocation): Promise<number> {
   // TODO add encrypted version to index
 
   return 0;
+}
+
+function quotePath(path: string): string {
+  const escaped = path
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"');
+
+  if (escaped === path && !path.includes(' ')) {
+    return path;
+  } else {
+    return  `"${escaped}"`;
+  }
 }
 
 export const optionsSchema = {
