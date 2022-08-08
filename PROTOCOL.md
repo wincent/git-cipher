@@ -96,10 +96,9 @@ This procedure is used to give access to the plain-text contents of encrypted fi
 
 1. Create a directory at `.git/git-cipher` for storing decrypted secrets, if one does not already exist.
 2. Set permissions on `.git/git-cipher` to be mode 0700 (accessible only to owner).
-3. Create a file with 0600 permissions at `.git/git-cipher`; if it already exists, set the permissions to 0600.
-4. Decrypt the file at `.git-cipher/secrets.json.asc` and write the contents to `.git/git-cipher/secrets.json`.
-
-TODO: document here that we update worktree files (and also implement that)
+3. Decrypt the file at `.git-cipher/secrets.json.asc` and write the contents to `.git/git-cipher/secrets.json` with permissions set to 0600.
+4. Set permissions on the repo to 0700 to protect plaintext in the worktree.
+5. Update managed files in the worktree with their plaintext content.
 
 Observations:
 
@@ -185,49 +184,6 @@ Observations:
 ## `git-cipher unregister`
 
 TODO: describe what we do if somebody does `git mv` on an encrypted file (really, relying on the hook to catch that)
-
-TODO: note on inspecting staged files: `git show :0:examples/file`
-(ie. to see encrypted text)
-
-cf `git diff --cached --no-textconv -- examples`
-which turns off textconv, but won't show an actual diff:
-
-```
-diff --git a/examples/empty-file b/examples/empty-file
-new file mode 100644
-index 0000000..e69de29
-diff --git a/examples/file b/examples/file
-new file mode 100644
-index 0000000..e7ed76f
-Binary files /dev/null and b/examples/file differ
-```
-
-to see binary patch: `git diff --cached --no-textconf --binary -- examples`
-
-```
-diff --git a/examples/file b/examples/file
-new file mode 100644
-index 0000000000000000000000000000000000000000..e7ed76fabbcfe8325a089b468af70284e3e031e0
-GIT binary patch
-literal 1362
-zcmXX`!ER(Z2)w_qh~}PdgKaP)&1tVIWwqKL01Qb>=_E=r+4=mXwR3yexPYqSUG?$e
-...
-```
-
-to see textual diff of ciphertext:`git -c diff.git-cipher.binary=false diff --cached --no-textconv -- examples`
-
-until cached, will show this in addition to the actual diff:
-
-```
-file /tmp/git-blob-RNj8eb/file is already decrypted; passing through
-file examples/file is already decrypted; passing through
-```
-
-better than that, because it avoids the above output: `git -c diff.git-cipher.textconv=cat -c diff.git-cipher.binary=false diff --cached --no-textconv -- examples`
-
-etc
-
-TODO: may want to make `git-cipher diff` convenience command for this, with `--ciphertext` or `--raw` options
 
 # Appendix: Prior art
 
