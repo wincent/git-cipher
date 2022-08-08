@@ -8,6 +8,7 @@ import {join, relative, resolve} from 'node:path';
 import {cwd, stdout} from 'node:process';
 
 import Config from '../Config.mjs';
+import {isErrnoException} from '../assert.mjs';
 import commonOptions from '../commonOptions.mjs';
 import git from '../git.mjs';
 import * as log from '../log.mjs';
@@ -38,14 +39,15 @@ export async function execute(invocation: Invocation): Promise<number> {
   });
   const config = new Config();
 
-  const managedFiles = await config.managedFiles();
   const topLevel = await config.topLevel();
-  if (!managedFiles || !topLevel) {
+  const managedFiles = await config.managedFiles();
+  const untrackedManagedFiles = await config.untrackedManagedFiles();
+  if (!topLevel || !managedFiles || !untrackedManagedFiles) {
     log.error('unable to list files');
     return 1;
   }
 
-  for (const file of managedFiles) {
+  for (const file of [...managedFiles, ...untrackedManagedFiles].sort()) {
     const relativePath = relative(cwd(), join(topLevel, file));
 
     if (filters.length) {
@@ -78,7 +80,13 @@ export async function execute(invocation: Invocation): Promise<number> {
   return 0;
 }
 
-type EncryptionStatus = 'decrypted' | 'empty' | 'encrypted' | 'error';
+type EncryptionStatus =
+  | 'decrypted'
+  | 'empty'
+  | 'encrypted'
+  | 'error'
+  | 'missing'
+  | 'untracked';
 
 const PARSE_RESULT_TO_ENCRYPTION_STATUS = {
   'already-decrypted': 'decrypted',
@@ -99,6 +107,14 @@ async function indexStatus(relativePath: string): Promise<EncryptionStatus> {
   const result = await git('show', `:0:${relativePath}`);
   if (result.success) {
     return status(result.stdout);
+  } else if (typeof result.status === 'number' && result.status) {
+    const stderr = result.stderr.toString();
+    // Best effort at fuzzy matching error text (English only).
+    if (stderr.includes('not in the index')) {
+      return 'untracked';
+    } else if (stderr.includes('does not exist')) {
+      return 'missing';
+    }
   }
   return 'error';
 }
@@ -107,7 +123,10 @@ async function worktreeStatus(relativePath: string): Promise<EncryptionStatus> {
   try {
     const contents = await readFile(relativePath);
     return status(contents);
-  } catch {
+  } catch (error) {
+    if (isErrnoException(error) && error.code === 'ENOENT') {
+      return 'missing';
+    }
     return 'error';
   }
 }

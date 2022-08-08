@@ -24,6 +24,7 @@ export default class Config {
   _hooksPath?: string | null;
   _managedFiles?: Array<string> | null;
   _topLevel?: string | null;
+  _untrackedManagedFiles?: Array<string> | null;
 
   constructor() {}
 
@@ -284,6 +285,39 @@ export default class Config {
     }
   }
 
+  async untrackedManagedFiles(): Promise<Array<string> | null> {
+    if (this._untrackedManagedFiles === undefined) {
+      const topLevel = await this.topLevel();
+      if (!topLevel) {
+        log.error(
+          'unable to get untracked managed files because could not determine top-level'
+        );
+        this._untrackedManagedFiles = null;
+      } else {
+        const result = await git(
+          '-C',
+          topLevel,
+          'ls-files',
+          '-z',
+          '--others',
+          ':(attr:filter=git-cipher)'
+        );
+        if (result.success) {
+          this._untrackedManagedFiles = [];
+          for (const file of result.stdout.toString().split('\0')) {
+            // Git will emit trailing '\0' so we'll get one final empty file.
+            if (file) {
+              this._untrackedManagedFiles.push(file);
+            }
+          }
+        } else {
+          log.error(describeResult(result));
+          this._untrackedManagedFiles = null;
+        }
+      }
+    }
+    return this._untrackedManagedFiles;
+  }
   async writePrivateSecrets(secrets: Secrets) {
     const privateDirectory = await this.privateDirectory();
     assert(privateDirectory);
