@@ -1,4 +1,4 @@
-### `git-cipher init`
+# `git-cipher init`
 
 To prepare a repository to use git-cipher for the first time:
 
@@ -36,3 +36,13 @@ git-cipher init --force
 ```
 
 (ie. the `--unlock` ensures we have local copies of the decrypted plaintext, the `rm` throws away the old secrets, and `--force` overwrites the in-tree `.git-cipher/secrets.asc.json` file with the new secrets.)
+
+## Options
+
+### `--force`
+
+Overwrites any existing secrets at `.git-cipher/secrets.asc.json`.
+
+### `--recipients`
+
+Documentation here.

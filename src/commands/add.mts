@@ -10,13 +10,12 @@ import Config from '../Config.mjs';
 import commonOptions from '../commonOptions.mjs';
 import git from '../git.mjs';
 import * as log from '../log.mjs';
+import markdown from '../markdown.mjs';
 import {describeResult} from '../run.mjs';
 
 export const description = 'what this thing does';
 
-export const longDescription = `
-  long description here
-`;
+export const documentation = await markdown('git-cipher-add');
 
 export async function execute(invocation: Invocation): Promise<number> {
   if (!invocation.args.length) {

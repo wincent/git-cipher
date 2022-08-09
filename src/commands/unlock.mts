@@ -9,15 +9,14 @@ import {chmod} from 'node:fs/promises';
 import Config from '../Config.mjs';
 import commonOptions from '../commonOptions.mjs';
 import * as log from '../log.mjs';
+import markdown from '../markdown.mjs';
 import removeCachedPlaintext from '../removeCachedPlaintext.mjs';
 import resetManagedFiles from '../resetManagedFiles.mjs';
 
 export const description =
   'unlocks the current repository, decrypting its secrets';
 
-export const longDescription = `
-  More docs here, to be shown somewhere...
-`;
+export const documentation = await markdown('git-cipher-unlock');
 
 export async function execute(invocation: Invocation): Promise<number> {
   const config = new Config();
@@ -56,14 +55,6 @@ export const optionsSchema = {
   '--force': {
     defaultValue: false,
     kind: 'switch',
-    longDescription: `
-      If ciphertext versions of managed files exist in the worktree,
-      \`git-cipher unlock\` will reset them to their decrypted state.
-      However, if the worktree is "dirty" it will abort.
-
-      Use the \`--force\` switch to proceed with the reset even when
-      the worktree is dirty.
-    `,
-    shortDescription: 'replace ciphertext even if worktree is dirty',
+    description: 'replace ciphertext even if worktree is dirty',
   },
 } as const;

@@ -14,20 +14,18 @@ type Options = {
 type OptionSchema = {
   allowedValues?: Array<string>;
   defaultValue?: string;
+  description?: string;
   kind: 'option';
-  longDescription?: string;
   process?: (value: string) => unknown;
   required?: boolean;
-  shortDescription?: string;
 };
 
 type SwitchSchema = {
   defaultValue?: boolean;
+  description?: string;
   kind: 'switch';
-  longDescription?: string;
   process?: (value: boolean) => unknown;
   required?: boolean;
-  shortDescription?: string;
 };
 
 export type OptionsSchema = {
@@ -59,19 +57,15 @@ export function assertOptionsSchema(
       );
     }
 
+    if (hasKey(option, 'description')) {
+      assert(typeof option.description === 'string');
+    }
+
     assert(hasKey(option, 'kind'));
     assert(option.kind === 'option' || option.kind === 'switch');
 
-    if (hasKey(option, 'longDescription')) {
-      assert(typeof option.longDescription === 'string');
-    }
-
     if (hasKey(option, 'required')) {
       assert(typeof option.required === 'boolean');
-    }
-
-    if (hasKey(option, 'shortDescription')) {
-      assert(typeof option.shortDescription === 'string');
     }
   }
 }

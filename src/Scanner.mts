@@ -26,12 +26,16 @@ export default class Scanner {
     return this.index === this.string.length;
   }
 
-  peek(length: number = 1): string {
-    if (length < 0) {
-      throw new Error('peek() parameter must not be negative');
+  /**
+   * Checks to see if `pattern` matches at the current location and returns the
+   * match, if any. Does not advance the index.
+   */
+  peek(pattern: string | RegExp): string | undefined {
+    const peeked = this.scan(pattern);
+    if (typeof peeked === 'string') {
+      this.reset(this.index - peeked.length);
     }
-
-    return this.remaining.slice(0, length);
+    return peeked;
   }
 
   scan(pattern: string | RegExp): string | undefined {

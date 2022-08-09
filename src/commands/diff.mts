@@ -3,18 +3,17 @@
  * SPDX-License-Identifier: MIT
  */
 
+import markdown from '../markdown.mjs';
 import wrap, {revealSchema} from '../wrap.mjs';
 
 export const description = 'cipher-aware wrapper around `git diff`';
 
-export const longDescription = `
-  explanation
-`;
+export const documentation = await markdown('git-cipher-diff');
 
 export async function execute(invocation: Invocation): Promise<number> {
   return wrap('diff', invocation);
 }
 
 export const optionsSchema = {
-  ...revealSchema('diff'),
+  ...revealSchema,
 } as const;

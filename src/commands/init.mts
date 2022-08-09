@@ -23,6 +23,7 @@ import dedent from '../dedent.mjs';
 import gpg from '../gpg.mjs';
 import hex from '../hex.mjs';
 import * as log from '../log.mjs';
+import markdown from '../markdown.mjs';
 import {bin} from '../paths.mjs';
 import {describeResult} from '../run.mjs';
 import shellEscape from '../shellEscape.mjs';
@@ -31,9 +32,7 @@ const __DEV__ = !!env['__DEV__'];
 
 export const description = 'what this thing does';
 
-export const longDescription = `
-  long description here
-`;
+export const documentation = await markdown('git-cipher-init');
 
 export async function execute(invocation: Invocation): Promise<number> {
   const config = new Config();
@@ -198,41 +197,27 @@ export const optionsSchema = {
   ...commonOptions,
   // '--passphrase': {
   //   kind: 'option',
-  //   longDescription: '',
   //   required: false,
-  //   shortDescription: '',
+  //   description: '',
   // },
   // '--passphrase-method': {
   //   allowedValues: ['arg', 'gpg', 'env', 'prompt'],
   //   defaultValue: 'gpg',
   //   kind: 'option',
-  //   longDescription: `
-  //   `,
   //   required: false,
-  //   shortDescription: ''
+  //   description: ''
   // },
   '--force': {
     defaultValue: false,
     kind: 'switch',
-    longDescription: `
-      Overwrites any existing secrets at \`.git-cipher/secrets.asc.json\`.
-    `,
     required: false,
-    shortDescription: 'overwrite existing secrets',
+    description: 'overwrite existing secrets',
   },
   '--recipients': {
     defaultValue: 'greg@hurrell.net,wincent@github.com',
     kind: 'option',
-    longDescription: `
-      comma-separated list
-
-      long description
-      here
-
-         usage example
-    `,
     required: true,
-    shortDescription: 'short description',
+    description: 'short description',
     process(value: string): Array<string> {
       return value.split(',').flatMap(
         // TODO: validate that recipients look like a GPG user id

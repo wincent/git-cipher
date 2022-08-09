@@ -17,6 +17,8 @@
     "typescript": "4.7.4"
   },
   "scripts": {
+    "clean": "rm -r lib/*",
+    "compile": "yarn run tsc",
     "format:check": "npx -y prettier --check \"**/*.{md,mts}\" \"*.{md,json}\"",
     "format": "npx -y prettier --write \"**/*.{md,mts}\" \"*.{md,json}\""
   },

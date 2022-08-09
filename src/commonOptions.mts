@@ -7,26 +7,17 @@ const commonOptions = {
   '--debug': {
     defaultValue: false,
     kind: 'switch',
-    longDescription: `
-      long
-    `,
-    shortDescription: 'short',
+    description: 'short',
   },
   '--quiet': {
     defaultValue: false,
     kind: 'switch',
-    longDescription: `
-      long
-    `,
-    shortDescription: 'short',
+    description: 'short',
   },
   '--verbose': {
     defaultValue: false,
     kind: 'switch',
-    longDescription: `
-      increases the verbosity
-    `,
-    shortDescription: 'increase verbosity',
+    description: 'increase verbosity',
   },
 } as const;
 

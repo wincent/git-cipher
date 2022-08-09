@@ -58,9 +58,16 @@ Note that two files with the same contents but different names will produce dist
 
 A minor improvement is made by not actually encrypting empty files. 0-byte files remain 0-byte files even when managed by git-cipher. As the 0-byte file is a trivial case that could be included in any attack involving guessable plaintext, we can simply exclude such files from management by the system (although this is all academic, because there is no real reason to want to encrypt an empty file in the first place).
 
-There are a couple of example files at [examples/single-byte](examples/single-byte) and [examples/fifteen-bytes](examples/fifteen-bytes) showing what happens when extremely small payloads are encrypted. Both of these produce 32 hex digits of ciphertext, equivalent to 16 bytes (128 bits), which is the block size use by the AES cipher (irrespective of key size, which in this case is 256 bits). OpenSSL applies padding as required to fill out any partial block. Although there is unlikely any practical justification for wanting to encrypt a file containing a single byte, an attacker suspecting that such a file exists knows that it must be one of 256 possible values. However, the fact that [IVs are unpredictable](https://crypto.stackexchange.com/questions/3883/why-is-cbc-with-predictable-iv-considered-insecure-against-chosen-plaintext-atta), along with the fact that plaintexts anywhere between 1 and 15 bytes all produce the same size ciphertext, means that even these small payloads aren't particularly susceptible to attack.[^small]
+There are a couple of example files at [examples/single-byte](examples/single-byte) and [examples/fifteen-bytes](examples/fifteen-bytes) showing what happens when extremely small payloads are encrypted. Both of these produce 32 hex digits of ciphertext, equivalent to 16 bytes (128 bits), which is the block size used by the AES cipher (irrespective of key size, which in this case is 256 bits). OpenSSL applies padding as required to fill out any partial block. Although there is unlikely any practical justification for wanting to encrypt a file containing a single byte, an attacker suspecting that such a file exists knows that it must be one of 256 possible values. However, the fact that [IVs are unpredictable](https://crypto.stackexchange.com/questions/3883/why-is-cbc-with-predictable-iv-considered-insecure-against-chosen-plaintext-atta), along with the fact that plaintexts anywhere between 1 and 15 bytes all produce the same size ciphertext, means that even these small payloads aren't particularly susceptible to attack.[^small]
 
 [^small]: For some other notes on encrypting small files, see [crypto.stackexchange.com/questions/11113](https://crypto.stackexchange.com/questions/11113/encryption-of-small-messages).
+
+## General observations about the security model
+
+git-cipher attempts to make operations on the managed files in an unlocked repository relatively "transparent" to the user. That is, the user should be able to run commands like `git diff` and have them show them the plaintext of their encrypted files. But note that, because all of this is built on top of entries in the `.gitattributes` file, anything that moves a managed file from its original location will require an update to the attributes. The `hook` subcommand tries to avoid any unintentional commit of decrypted plaintext, but it's ability to do so depends on managed files actually being listed in the attributes file, and at the right locations.
+
+- If a user runs `git mv folder/secret other/secret`, then the attributes applying to the file at the old location will cease to apply in the new location (unless the user has manually manipulated the attributes file to instead specify a glob-based pattern — in this case, something like `secret` would suffice).
+- Likewise, if the user creates a symlink to a decrypted file, or copies it elsewhere within, or out of, the repo, then git-cipher it in some sense escapes git-cipher's control. (Related to this, it should be noted that if you symlink to a managed file, then the contents of the file will be affected by `lock` and `unlock` operations made within the repo.)
 
 # Operations
 
@@ -73,7 +80,7 @@ This is the procedure followed to prepare a repository for working with git-ciph
 
 1. Abort if the current working directory is not part of a (non-bare) Git repository.
 2. Create a `.git-cipher` folder at the repository root, if it does not exist already.
-3. If secrets already exist at `.git/git-cipher/secrets.json` (ie. because the user has run `git-cipher unlock`, use those; otherwise, perform steps 4 through 8.
+3. If secrets already exist at `.git/git-cipher/secrets.json` (ie. because the user has run `git-cipher unlock`), use those; otherwise, perform steps 4 through 8.
 4. Generate a 256-bit (32-byte) encryption passphrase using a CSPRNG.
 5. Generate a 512-bit (64-byte) salt using a CSPRNG.
 6. Derive a 256-bit (32-byte) encryption key from the passphrase and salt using the `scrypt` derivation function and default parameters[^scrypt]. At this point the passphrase and salt are discarded.
@@ -86,7 +93,7 @@ This is the procedure followed to prepare a repository for working with git-ciph
 Observations:
 
 - We use one key for encryption and one key for HMAC authentication [not because we have to, but because we can](https://stackoverflow.com/a/2504628/2103996).
-- Likewise, we use `scrypt` for key derivation rather than simply using bytes from the CSPRNG because in the future, we may wish to offer the ability to derive a key from a user-supplied passphrase (for example, to enable a mode of operation that did not depend on `gpg`; note that this would require some us to generate a single, larger "key" using `scrypt` and then split it up into segments, providing us with an encryption key, an authentication key, and a salt).
+- Likewise, we use `scrypt` for key derivation rather than simply using bytes from the CSPRNG because in the future, we may wish to offer the ability to derive a key from a user-supplied passphrase (for example, to enable a mode of operation that did not depend on `gpg`; note that this would require us to generate a single, larger "key" using `scrypt` (or ideally, a key derivation function that didn't require us to provide and somehow store an additional salt) and then split it up into segments, providing us with an encryption key, an authentication key, and a salt).
 
 [^scrypt]: At the time of writing, [the default parameters](https://nodejs.org/api/crypto.html#cryptoscryptpassword-salt-keylen-options-callback) are a CPU/memory cost parameter of 16,384, a block size of 8, a parallelization factor of 1, and a maximum memory bound of 33,554,432 (32 &times; 1024 &times; 1024).
 
@@ -184,8 +191,6 @@ Observations:
 ## `git-cipher smudge` (decrypt)
 
 ---
-
-TODO: describe what we do if somebody does `git mv` on an encrypted file (really, relying on the hook to catch that)
 
 # Appendix: Prior art
 

@@ -10,15 +10,14 @@ import {extname, join} from 'node:path';
 import commonOptions from '../commonOptions.mjs';
 import dedent from '../dedent.mjs';
 import * as log from '../log.mjs';
+import markdown, {assertMarkdown} from '../markdown.mjs';
 import {assertOptionsSchema} from '../parseOptions.mjs';
 
 const COMMANDISH = /^\w+$/;
 
 export const description = 'prints usage information';
 
-export const longDescription = `
-  long description here
-`;
+export const documentation = await markdown('git-cipher-help');
 
 export async function execute(invocation: Invocation): Promise<number> {
   const {commands: directory} = await import('../paths.mjs');
@@ -29,20 +28,23 @@ export async function execute(invocation: Invocation): Promise<number> {
     }
     const command = invocation.args[0];
     assert(command);
+    // TODO: usage mode (which just shows short descriptions)
     if (COMMANDISH.test(command)) {
       try {
         const file = command + '.mjs';
-        const {description, longDescription, optionsSchema} = await import(
+        const {description, documentation, optionsSchema} = await import(
           join(directory, file)
         );
         assert(typeof description === 'string');
+        assertMarkdown(documentation);
         assertOptionsSchema(optionsSchema);
         const heading = `Command: git-cipher ${command}`;
         log.printLine(heading);
         log.printLine('='.repeat(heading.length));
         log.printLine('\n', description);
-        log.printLine('\n', dedent(longDescription));
+        log.printLine('\n', documentation.text);
 
+        // TODO: replace this with stuff read from markdown
         const entries = Object.entries(optionsSchema);
         if (entries.length) {
           log.printLine('Options');
@@ -51,8 +53,8 @@ export async function execute(invocation: Invocation): Promise<number> {
         for (const [name, option] of entries) {
           // TODO: indent these a bit
           log.printLine(name);
-          if (option.longDescription) {
-            log.printLine(`\n${dedent(option.longDescription)}`);
+          if (option.description) {
+            log.printLine(`\n${dedent(option.description)}`);
           }
         }
 

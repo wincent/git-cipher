@@ -21,7 +21,16 @@ git cipher help
 
 ## Commands
 
-TODO: instead of documenting this exhaustively here, do it in the build-in help for each command; we can link to it from here.
+- [`git cipher unlock`](docs/git-cipher-unlock.md)
+- etc
+
+## How it works
+
+A brief summary follows — for a detailed description, see [PROTOCOL](PROTOCOL.md).
+
+git-cipher generates secrets that are used to encrypt and decrypt files in the Git repository. In this document we call these "managed files". The secrets are in turn encrypted using GnuPG and stored in the repository itself. Running `git-cipher unlock` makes these secrets available in the current repository and uses them to decrypt any encrypted files (provided the person running the unlock command has the appropriate GnuPG private key). Conversely `git-cipher lock` removes the local copy of the secrets (while leaving the encrypted copy of the secrets intact) and replaces any decrypted files with their encrypted equivalents.
+
+Files are added to the list of managed files with `git-cipher add`. These are added to the `.gitattributes` file and instruct Git to use git-cipher to transparently encrypt their contents when they are committed, and decrypt them when they are checked out. This is done using Git's "clean" and "smudge" filtering mechanism. A "textconv" filter is used to show plaintext diffs corresponding to changes made to encrypted files. A merge driver is used to facilitate merging encrypted files (by decrypting them, merging them, then encrypting the result).
 
 ## Installation
 

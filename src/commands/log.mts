@@ -3,18 +3,17 @@
  * SPDX-License-Identifier: MIT
  */
 
+import markdown from '../markdown.mjs';
 import wrap, {revealSchema} from '../wrap.mjs';
 
 export const description = 'cipher-aware wrapper around `git log`';
 
-export const longDescription = `
-  explanation
-`;
+export const documentation = await markdown('git-cipher-log');
 
 export async function execute(invocation: Invocation): Promise<number> {
   return wrap('log', invocation);
 }
 
 export const optionsSchema = {
-  ...revealSchema('log'),
+  ...revealSchema(),
 } as const;

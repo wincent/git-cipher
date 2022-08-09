@@ -11,13 +11,12 @@ import Config from '../Config.mjs';
 import commonOptions from '../commonOptions.mjs';
 import {decrypt, verify} from '../crypto.mjs';
 import * as log from '../log.mjs';
+import markdown from '../markdown.mjs';
 import parse from '../parse.mjs';
 
 export const description = 'decrypts file contents for display in `git diff`';
 
-export const longDescription = `
-  something about the gitattributes manpage
-`;
+export const documentation = await markdown('git-cipher-textconv');
 
 export async function execute(invocation: Invocation): Promise<number> {
   if (invocation.args.length !== 1) {

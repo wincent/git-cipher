@@ -10,15 +10,14 @@ import clean, {isEncrypted} from '../clean.mjs';
 import commonOptions from '../commonOptions.mjs';
 import git from '../git.mjs';
 import * as log from '../log.mjs';
+import markdown from '../markdown.mjs';
 import smudge from '../smudge.mjs';
 
 import type {Secrets} from '../Config.mjs';
 
 export const description = 'merge driver for encrypted files';
 
-export const longDescription = `
-  "I'll find something to put here"
-`;
+export const documentation = await markdown('git-cipher-merge');
 
 export async function execute(invocation: Invocation): Promise<number> {
   if (invocation.args.length !== 5) {

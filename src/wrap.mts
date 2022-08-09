@@ -55,26 +55,12 @@ export default async function wrap(
   }
 }
 
-export function revealSchema(command: string) {
+export function revealSchema() {
   return {
     '--reveal': {
       defaultValue: false,
       kind: 'switch',
-      longDescription: `
-        This switch passes a number of other arguments to the underlying
-        \`git ${command}\` command; namely:
-
-        - \`-c diff.git-cipher.binary=false\`: prevents Git from showing
-          encrypted files as binary (possible, because the encrypted files
-          are formatted in ASCII text).
-
-        - \`--no-textconv\`: stops Git from passing "binary" files through
-          text conversion filters (of interest here, \`git-cipher textconv\`).
-
-        Together, these arguments cause Git to show the ciphertext as it
-        actually exists within Git object storage.
-      `,
-      shortDescription: `show raw ciphertext as it is literally stored in Git's object storage`,
+      description: `show raw ciphertext as it is literally stored in Git's object storage`,
     },
   } as const;
 }

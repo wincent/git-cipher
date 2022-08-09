@@ -25,12 +25,11 @@ import {
 import git from '../git.mjs';
 import hex from '../hex.mjs';
 import * as log from '../log.mjs';
+import markdown from '../markdown.mjs';
 
 export const description = 'what this thing does';
 
-export const longDescription = `
-  long description here
-`;
+export const documentation = await markdown('git-cipher-markdown');
 
 export async function execute(invocation: Invocation): Promise<number> {
   const filename = invocation.args[0] || 'package.json';

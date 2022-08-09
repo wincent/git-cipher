@@ -12,22 +12,12 @@ import {isErrnoException} from '../assert.mjs';
 import commonOptions from '../commonOptions.mjs';
 import git from '../git.mjs';
 import * as log from '../log.mjs';
+import markdown from '../markdown.mjs';
 import parse from '../parse.mjs';
 
 export const description = 'Lists encrypted files';
 
-export const longDescription = `
-  Shows the set of files managed by \`git-cipher\` in the current repository.
-
-  This is effectively provided as a convenience because the same information is
-  available in the ".gitattributes" file, albeit in a less readable format.
-
-  By default, shows all managed files. Can be scoped to list specific files by
-  passing additional arguments representing files or directories; for example,
-  to list managed files in the current directory only:
-
-      git-cipher ls .
-`;
+export const documentation = await markdown('git-cipher-ls');
 
 // TODO: this should print to stdout, just like `ls`
 // in general, there may be a bit of non-error output in various subcommands
@@ -135,26 +125,6 @@ export const optionsSchema = {
   ...commonOptions,
   '--verbose': {
     ...commonOptions['--verbose'],
-    longDescription: `
-      In addition to listing the paths, show current status information for
-      each file. For each of "index" and "worktree", the following statuses
-      may apply:
-
-          - encrypted
-          - empty
-          - error
-          - decrypted
-
-      Sample output:
-
-          examples/empty-file (index=empty, worktree=empty)
-          examples/file (index=encrypted, worktree=decrypted)
-
-      Note that a status of "index=decrypted" is always a problem, because it
-      indicates that plaintext was staged in the index and may be committed.
-      The \`git-cipher ls\` subcommand will print such lines using bold, red
-      highlighting.
-    `,
-    shortDescription: 'display status information for each file',
+    description: 'display status information for each file',
   },
 } as const;

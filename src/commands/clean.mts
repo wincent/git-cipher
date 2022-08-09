@@ -7,21 +7,14 @@ import {Buffer} from 'node:buffer';
 import {stdin, stdout} from 'node:process';
 
 import Config from '../Config.mjs';
+import clean, {isEncrypted} from '../clean.mjs';
 import commonOptions from '../commonOptions.mjs';
 import * as log from '../log.mjs';
-import clean, {isEncrypted} from '../clean.mjs';
+import markdown from '../markdown.mjs';
 
 export const description = 'encrypts file contents';
 
-export const longDescription = `
-  should be called with file path as an argument
-
-  expects file contents on stdin
-
-  emits ciphertext on stdout
-
-  long description details follow
-`;
+export const documentation = await markdown('git-cipher-clean');
 
 export async function execute(invocation: Invocation): Promise<number> {
   if (invocation.args.length !== 1) {

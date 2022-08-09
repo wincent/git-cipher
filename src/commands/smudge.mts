@@ -9,19 +9,12 @@ import {stdin, stdout} from 'node:process';
 import Config from '../Config.mjs';
 import commonOptions from '../commonOptions.mjs';
 import * as log from '../log.mjs';
+import markdown from '../markdown.mjs';
 import smudge from '../smudge.mjs';
 
 export const description = 'decrypts file contents';
 
-export const longDescription = `
-  should be called with file path as an argument
-
-  expects ciphertext on stdin
-
-  emits plaintext on stdout
-
-  long description continues here
-`;
+export const documentation = await markdown('git-cipher-smudge');
 
 export async function execute(invocation: Invocation): Promise<number> {
   if (invocation.args.length !== 1) {

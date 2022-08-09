@@ -10,12 +10,11 @@ import {isErrnoException} from '../assert.mjs';
 import {isEncrypted} from '../clean.mjs';
 import commonOptions from '../commonOptions.mjs';
 import * as log from '../log.mjs';
+import markdown from '../markdown.mjs';
 
 export const description = 'short desc';
 
-export const longDescription = `
-  long desc
-`;
+export const documentation = await markdown('git-cipher-is-encrypted');
 
 export async function execute(invocation: Invocation): Promise<number> {
   if (!invocation.args.length) {
@@ -55,9 +54,6 @@ export const optionsSchema = {
   '--exit-code': {
     defaultValue: false,
     kind: 'switch',
-    longDescription: `
-      long desc
-    `,
-    shortDescription: 'short desc',
+    description: 'short desc',
   },
 } as const;

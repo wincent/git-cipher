@@ -8,15 +8,14 @@ import commonOptions from '../commonOptions.mjs';
 import dedent from '../dedent.mjs';
 import git from '../git.mjs';
 import * as log from '../log.mjs';
+import markdown from '../markdown.mjs';
 import parse from '../parse.mjs';
 import {describeResult} from '../run.mjs';
 import shellEscape from '../shellEscape.mjs';
 
 export const description = 'what this thing does';
 
-export const longDescription = `
-  long description here
-`;
+export const documentation = await markdown('git-cipher-hook');
 
 export async function execute(invocation: Invocation): Promise<number> {
   if (invocation.args.length) {

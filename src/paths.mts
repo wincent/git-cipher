@@ -10,5 +10,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export const root = resolve(join(__dirname, '..'));
 export const bin = join(root, 'bin');
+export const docs = join(root, 'docs');
 export const lib = join(root, 'lib');
 export const commands = join(lib, 'commands');
