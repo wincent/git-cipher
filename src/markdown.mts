@@ -4,6 +4,7 @@
  */
 
 import assert from 'node:assert';
+import {stdout} from 'node:process';
 import {readFile} from 'node:fs/promises';
 import {join} from 'node:path';
 
@@ -51,26 +52,24 @@ export default async function markdown(command: string): Promise<Markdown> {
 
   let lastIndex = scanner.index;
   while (!scanner.atEnd()) {
+    scanWhitespace(scanner);
     if (scanner.scan(/##\s*Options\s*\n/)) {
       result.options = scanOptions(scanner);
+      continue;
     }
-
-    // TODO: make this scan more things; like fenced code blocks, lists, headings etc.
-    const fenced = scanFenced(scanner);
-    if (fenced) {
-      result.text = result.text.length ? `${result.text}\n${fenced}` : fenced;
+    const heading = scanHeading(scanner);
+    if (heading) {
+      result.text = result.text.length ? `${result.text}\n${heading}` : heading;
     }
-
-    const line = scanner.scan(/[^\n]+/);
-    if (line) {
-      result.text = result.text.length
-        ? `${result.text}\n\n${line.trim()}`
-        : line.trim();
+    scanWhitespace(scanner);
+    const text = scanText(scanner);
+    if (text) {
+      result.text = result.text.length ? `${result.text}\n${text}` : text;
     }
-
-    scanner.scan(/\s+/);
+    scanWhitespace(scanner);
 
     assert(scanner.index !== lastIndex);
+    lastIndex = scanner.index;
   }
 
   return result;
@@ -111,31 +110,31 @@ function scanFenced(scanner: Scanner): string {
   return fenced;
 }
 
-function scanOption(scanner: Scanner, name: string): Option {
-  const option = {
-    name,
-    description: '',
-  };
-  let lastIndex = scanner.index;
-  while (!scanner.atEnd()) {
-    if (scanner.peek(/###?\s*\S/)) {
-      // Next option or section is starting.
-      break;
-    }
-
-    // TODO: make this scan more things; like fenced code blocks, lists etc
-    const line = scanner.scan(/[^#][^\n]*/);
-    if (line) {
-      option.description = option.description.length
-        ? `${option.description}\n\n${line.trim()}`
-        : line.trim();
-    }
-
-    scanner.scan(/\s+/);
-
-    assert(scanner.index !== lastIndex);
+function scanHeading(scanner: Scanner): string {
+  const heading = scanner.scan(/#+s*[^\n]+\n/);
+  if (heading) {
+    return heading;
   }
-  return option;
+  return '';
+}
+
+function scanList(scanner: Scanner): string {
+  let list = '';
+  if (scanner.scan(/-\s*([^\n]+)\n/)) {
+    const item = scanner.captures?.[0];
+    assert(item);
+    list = list.length ? `${list}\n${item}\n` : `- ${item}\n`;
+  }
+  return list;
+}
+
+function scanOption(scanner: Scanner, name: string): Option {
+  const description = scanText(scanner);
+  assert(description);
+  return {
+    name,
+    description,
+  };
 }
 
 function scanOptions(scanner: Scanner): Array<Option> {
@@ -147,15 +146,78 @@ function scanOptions(scanner: Scanner): Array<Option> {
       break;
     }
 
-    if (scanner.scan(/###\s*([^\n]+)/)) {
+    if (scanner.scan(/###\s*`([^\n`]+)`\s*\n/)) {
       const name = scanner.captures?.[0];
       assert(name);
       options.push(scanOption(scanner, name));
     }
 
     assert(scanner.index !== lastIndex);
+    lastIndex = scanner.index;
   }
   return options;
 }
 
-// TODO: wrapping
+/**
+ * Returns a single paragraph. Note that this depends on more specific types of
+ * scan having been called first to handle headings, lists, and fenced code
+ * blocks).
+ */
+function scanParagraph(scanner: Scanner): string {
+  const peeked = scanner.peek(/.{1,3}/);
+  assert(!peeked?.startsWith('#'));
+  assert(!peeked?.startsWith('-'));
+  assert(peeked !== '```');
+  const line = scanner.scan(/[^\n]+/);
+  if (line) {
+    return line.trim();
+  }
+  return '';
+}
+
+/**
+ * Scans text (paragraphs, fenced code blocks, lists) up until the next section
+ * header, or until the end of the input if no such header exists.
+ */
+function scanText(scanner: Scanner): string {
+  let text = '';
+  let lastIndex = scanner.index;
+  while (!scanner.atEnd()) {
+    scanWhitespace(scanner);
+    if (scanner.peek(/#/)) {
+      break;
+    }
+    const fenced = scanFenced(scanner);
+    if (fenced) {
+      text = text.length ? `${text}\n${fenced}` : fenced;
+      continue;
+    }
+    const list = scanList(scanner);
+    if (list) {
+      text = text.length ? `${text}\n${list}` : list;
+      continue;
+    }
+    const paragraph = scanParagraph(scanner);
+    if (paragraph) {
+      text = text.length ? `${text}\n${paragraph}` : paragraph;
+      continue;
+    }
+    assert(scanner.index !== lastIndex);
+    lastIndex = scanner.index;
+  }
+  return text;
+}
+
+function scanWhitespace(scanner: Scanner): string | undefined {
+  return scanner.scan(/\s+/);
+}
+
+function wrapWidth(): number {
+  return stdout.columns || 80;
+}
+
+// TODO: don't export this, i am only exporting it now to stop TS from complaining
+export function wrap(text: string): string {
+  const width = wrapWidth();
+  return `${width}:${text}`; // TODO actually implement
+}
