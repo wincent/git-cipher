@@ -4,14 +4,14 @@
  */
 
 import markdown from '../markdown.mjs';
-import wrap, {revealSchema} from '../wrap.mjs';
+import wrapGit, {revealSchema} from '../wrapGit.mjs';
 
 export const description = 'cipher-aware wrapper around `git diff`';
 
 export const documentation = await markdown('git-cipher-diff');
 
 export async function execute(invocation: Invocation): Promise<number> {
-  return wrap('diff', invocation);
+  return wrapGit('diff', invocation);
 }
 
 export const optionsSchema = {

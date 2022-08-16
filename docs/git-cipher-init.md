@@ -1,5 +1,9 @@
 # `git-cipher init`
 
+- This is a list just because I want to prove that we can wrap a list and have it format nicely. I will eventually replace this.
+- Here is a shorter list item.
+- And here is a longer list item again. It is a very nice list item. Very nice. One of the best list items, probably.
+
 To prepare a repository to use git-cipher for the first time:
 
 ```

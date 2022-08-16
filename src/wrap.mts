@@ -3,64 +3,66 @@
  * SPDX-License-Identifier: MIT
  */
 
-import {spawnSync} from 'node:child_process';
+import assert from 'node:assert';
 
 /**
- * Minimally wrap the specified Git `command`, endowing it with a `--reveal`
- * option that can reveal actual ciphertext as stored in Git's object storage.
+ * Wraps `text` within specified `width` using a basic version of the approach
+ * (apparently?) implemented in TeX that seeks to minimize raggedness of the
+ * right margin, but doesn't support advanced features like hyphenation.
+ *
+ * For each line except the last, we calculate a penalty based on the amount of
+ * trailing whitespace squared. We use a bottom-up dynamic programming approach
+ * to find an optimum set of break-points (ie. using memoization to avoid
+ * recomputing the same penalties as we explore the problem space). Run time is
+ * quadratic.
  */
-export default async function wrap(
-  command: string,
-  invocation: Invocation
-): Promise<number> {
-  const args: Array<string> = [];
+export default function wrap(text: string, width: number = 72): string {
+  const words = text.trim().split(/\s+/g);
+  assert(words.length);
+  const memo: Array<{
+    end: number;
+    penalty: number;
+  }> = [];
 
-  // Pre-scan to make the main loop easier to write.
-  const revealIndex = invocation.argv.indexOf('--reveal');
-  const commandIndex = invocation.argv.indexOf(command);
-  const textconvIndex = invocation.argv.findIndex((arg) =>
-    /^--(?:no-)?textconv$/.test(arg)
-  );
-  const verbatimIndex = invocation.argv.indexOf('--');
-
-  const shouldReveal =
-    revealIndex !== -1 &&
-    (verbatimIndex === -1 ? true : revealIndex < verbatimIndex);
-  const shouldTextconv =
-    (shouldReveal && textconvIndex === -1) ||
-    (verbatimIndex === -1 ? false : textconvIndex > verbatimIndex);
-
-  for (let i = 0; i < invocation.argv.length; i++) {
-    const arg = invocation.argv[i]!;
-    if (arg === '--') {
-      args.push(...invocation.argv.slice(i));
-      break;
-    } else if (i === commandIndex) {
-      if (shouldReveal) {
-        args.unshift('-c', 'diff.git-cipher.binary=false');
+  for (let start = words.length - 1; start >= 0; start--) {
+    let length = 0;
+    for (let end = start + 1; end <= words.length; end++) {
+      const word = words[end - 1];
+      assert(word);
+      const candidateLength = word.length;
+      let fits = false;
+      if (end - start === 1) {
+        // First word after a break is always considered to fit.
+        fits = true;
+      } else {
+        fits = length + 1 + candidateLength <= width;
       }
-      args.push(arg);
-      if (shouldTextconv) {
-        args.push('--no-textconv');
+      if (fits) {
+        length = length ? length + 1 + candidateLength : candidateLength;
+        const next = memo[end] || {end: words.length, penalty: 0};
+        const penalty =
+          (end === words.length ? 0 : Math.pow(width - length, 2)) +
+          next.penalty;
+        memo[start] = {end, penalty};
+      } else {
+        break;
       }
-    } else if (i !== revealIndex || !shouldReveal) {
-      args.push(arg);
     }
   }
-  const result = spawnSync('git', args, {stdio: 'inherit'});
-  if (typeof result.status === 'number') {
-    return result.status;
-  } else {
-    return 1;
-  }
-}
 
-export function revealSchema() {
-  return {
-    '--reveal': {
-      defaultValue: false,
-      kind: 'switch',
-      description: `show raw ciphertext as it is literally stored in Git's object storage`,
-    },
-  } as const;
+  let output = '';
+  for (let i = 0; i < words.length; ) {
+    const line = memo[i];
+    assert(line);
+    while (i < line.end) {
+      output += words[i++];
+      if (i === line.end) {
+        output += '\n';
+        break;
+      } else {
+        output += ' ';
+      }
+    }
+  }
+  return output;
 }

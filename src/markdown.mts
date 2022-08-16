@@ -11,6 +11,7 @@ import {join} from 'node:path';
 import Scanner from './Scanner.mjs';
 import {assertIsObject, assertHasKey} from './assert.mjs';
 import {docs} from './paths.mjs';
+import wrap from './wrap.mjs';
 
 type Option = {
   name: string;
@@ -91,6 +92,21 @@ export function assertMarkdown(value: unknown): asserts value is Markdown {
   }
 }
 
+function formatList(text: string): string {
+  return text.replace(/- ([^\n]+)\n*/g, (_, content) => {
+    return wrap(content, wrapWidth() - 2)
+      .split(/\n/g)
+      .map((line, i) => {
+        return i ? `  ${line}\n` : `- ${line}\n`;
+      })
+      .join('');
+  });
+}
+
+function formatParagraph(text: string): string {
+  return wrap(text, wrapWidth());
+}
+
 function scanFenced(scanner: Scanner): string {
   let fenced = '';
   if (scanner.scan(/```(?:\w+)?\n/)) {
@@ -120,10 +136,10 @@ function scanHeading(scanner: Scanner): string {
 
 function scanList(scanner: Scanner): string {
   let list = '';
-  if (scanner.scan(/-\s*([^\n]+)\n/)) {
+  while (scanner.scan(/-\s*([^\n]+)\n/)) {
     const item = scanner.captures?.[0];
     assert(item);
-    list = list.length ? `${list}\n${item}\n` : `- ${item}\n`;
+    list = list.length ? `${list}\n- ${item}\n` : `- ${item}\n`;
   }
   return list;
 }
@@ -194,12 +210,14 @@ function scanText(scanner: Scanner): string {
     }
     const list = scanList(scanner);
     if (list) {
-      text = text.length ? `${text}\n${list}` : list;
+      text = text.length ? `${text}\n${formatList(list)}` : formatList(list);
       continue;
     }
     const paragraph = scanParagraph(scanner);
     if (paragraph) {
-      text = text.length ? `${text}\n${paragraph}` : paragraph;
+      text = text.length
+        ? `${text}\n${formatParagraph(paragraph)}`
+        : formatParagraph(paragraph);
       continue;
     }
     assert(scanner.index !== lastIndex);
@@ -213,11 +231,5 @@ function scanWhitespace(scanner: Scanner): string | undefined {
 }
 
 function wrapWidth(): number {
-  return stdout.columns || 80;
-}
-
-// TODO: don't export this, i am only exporting it now to stop TS from complaining
-export function wrap(text: string): string {
-  const width = wrapWidth();
-  return `${width}:${text}`; // TODO actually implement
+  return Math.max(4, stdout.columns - 2) || 72;
 }
