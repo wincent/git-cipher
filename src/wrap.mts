@@ -30,23 +30,15 @@ export default function wrap(text: string, width: number = 72): string {
       const word = words[end - 1];
       assert(word);
       const candidateLength = word.length;
-      let fits = false;
-      if (end - start === 1) {
-        // First word after a break is always considered to fit.
-        fits = true;
-      } else {
-        fits = length + 1 + candidateLength <= width;
-      }
-      if (fits) {
-        length = length ? length + 1 + candidateLength : candidateLength;
-        const next = memo[end] || {end: words.length, penalty: 0};
-        const penalty =
-          (end === words.length ? 0 : Math.pow(width - length, 2)) +
-          next.penalty;
-        memo[start] = {end, penalty};
-      } else {
+      length = length ? length + 1 + candidateLength : candidateLength;
+      if (end - start !== 1 && length > width) {
+        // Next word doesn't fit, and i'ts not the first word after a break.
         break;
       }
+      const next = memo[end] || {end: words.length, penalty: 0};
+      const penalty =
+        (end === words.length ? 0 : Math.pow(width - length, 2)) + next.penalty;
+      memo[start] = {end, penalty};
     }
   }
 
