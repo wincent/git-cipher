@@ -111,7 +111,8 @@ function formatHeading(text: string): string {
 function formatList(text: string, inset: number = 0): string {
   return text.replace(/- ([^\n]+)\n*/g, (_, content) => {
     return wrapWithInset(content, inset + 2)
-      .split(/\n/g)
+      .trimEnd()
+      .split(/\n+/g)
       .map((line, i) => {
         return i
           ? `${line}\n`
@@ -165,7 +166,7 @@ function scanList(scanner: Scanner): string {
   while (scanner.scan(/-\s*([^\n]+)\n/)) {
     const item = scanner.captures?.[0];
     assert(item);
-    list = list.length ? `${list}\n- ${item}\n` : `- ${item}\n`;
+    list = list.length ? `${list}\n- ${item}` : `- ${item}`;
   }
   return list;
 }

@@ -37,11 +37,7 @@ export async function execute(invocation: Invocation): Promise<number> {
         assert(typeof description === 'string');
         assertMarkdown(documentation);
         assertOptionsSchema(optionsSchema);
-        const heading = `Command: git-cipher ${command}`;
-        log.printLine(heading);
-        log.printLine('='.repeat(heading.length));
-        log.printLine('\n', description);
-        log.printLine('\n', documentation.text);
+        log.print(documentation.text);
 
         if (documentation.options.length) {
           log.printLine('\nOptions');
