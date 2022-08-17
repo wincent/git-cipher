@@ -8,7 +8,6 @@ import {readdir} from 'node:fs/promises';
 import {extname, join} from 'node:path';
 
 import commonOptions from '../commonOptions.mjs';
-import dedent from '../dedent.mjs';
 import * as log from '../log.mjs';
 import markdown, {assertMarkdown} from '../markdown.mjs';
 import {assertOptionsSchema} from '../parseOptions.mjs';
@@ -28,7 +27,7 @@ export async function execute(invocation: Invocation): Promise<number> {
     }
     const command = invocation.args[0];
     assert(command);
-    // TODO: usage mode (which just shows short descriptions)
+    // TODO: usage mode (which just shows short descriptions from optionsSchema)
     if (COMMANDISH.test(command)) {
       try {
         const file = command + '.mjs';
@@ -44,22 +43,20 @@ export async function execute(invocation: Invocation): Promise<number> {
         log.printLine('\n', description);
         log.printLine('\n', documentation.text);
 
-        // TODO: replace this with stuff read from markdown
-        const entries = Object.entries(optionsSchema);
-        if (entries.length) {
-          log.printLine('Options');
+        if (documentation.options.length) {
+          log.printLine('\nOptions');
           log.printLine('-------\n');
-        }
-        for (const [name, option] of entries) {
-          // TODO: indent these a bit
-          log.printLine(name);
-          if (option.description) {
-            log.printLine(`\n${dedent(option.description)}`);
+          for (const option of documentation.options) {
+            log.printLine(`${option.name}\n`);
+            if (option.description) {
+              log.printLine(`${option.description}`);
+            }
           }
         }
 
         return 0;
-      } catch {
+      } catch (error) {
+        log.debug(error);
         log.error(`couldn't get help for command: ${command}`);
       }
     } else {

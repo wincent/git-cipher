@@ -42,8 +42,6 @@ type Markdown = {
  * rather the simple command-oriented docs under "docs/".
  */
 export default async function markdown(command: string): Promise<Markdown> {
-  console.log(command);
-
   const contents = await readFile(join(docs, `${command}.md`), 'utf8');
   const scanner = new Scanner(contents);
   const result: Markdown = {
@@ -60,7 +58,9 @@ export default async function markdown(command: string): Promise<Markdown> {
     }
     const heading = scanHeading(scanner);
     if (heading) {
-      result.text = result.text.length ? `${result.text}\n${heading}` : heading;
+      result.text = result.text.length
+        ? `${result.text}\n${formatHeading(heading)}`
+        : formatHeading(heading);
     }
     scanWhitespace(scanner);
     const text = scanText(scanner);
@@ -92,28 +92,54 @@ export function assertMarkdown(value: unknown): asserts value is Markdown {
   }
 }
 
-function formatList(text: string): string {
+function formatFenced(text: string, inset: number): string {
+  return text.replace(/[^\n]*\n/g, (match) => {
+    return `${' '.repeat(inset + 4)}${match}`;
+  });
+}
+
+function formatHeading(text: string): string {
+  return text
+    .replace(/^#\s*([^\n]+)\n/g, (_, title) => {
+      return title + '\n' + '='.repeat(title.length) + '\n';
+    })
+    .replace(/^#+s*([^\n]+)\n/g, (_, title) => {
+      return title + '\n' + '-'.repeat(title.length) + '\n';
+    });
+}
+
+function formatList(text: string, inset: number = 0): string {
   return text.replace(/- ([^\n]+)\n*/g, (_, content) => {
-    return wrap(content, wrapWidth() - 2)
+    return wrapWithInset(content, inset + 2)
       .split(/\n/g)
       .map((line, i) => {
-        return i ? `  ${line}\n` : `- ${line}\n`;
+        return i
+          ? `${line}\n`
+          : line.replace(' '.repeat(inset + 2), ' '.repeat(inset) + '- ') +
+              '\n';
       })
       .join('');
   });
 }
 
-function formatParagraph(text: string): string {
-  return wrap(text, wrapWidth());
+function formatParagraph(text: string, inset: number = 0): string {
+  return wrapWithInset(text, inset);
+}
+
+function wrapWithInset(text: string, inset: number): string {
+  return wrap(text, wrapWidth() - inset * 2).replace(
+    /([^\n]*)\n/g,
+    (_, line) => {
+      return line ? `${' '.repeat(inset)}${line}\n` : `${line}\n`;
+    }
+  );
 }
 
 function scanFenced(scanner: Scanner): string {
   let fenced = '';
   if (scanner.scan(/```(?:\w+)?\n/)) {
-    fenced = '```\n';
     while (!scanner.atEnd()) {
       if (scanner.scan(/```\n/)) {
-        fenced += '```\n';
         return fenced;
       }
       const line = scanner.scan(/[^\n]*\n/);
@@ -145,7 +171,7 @@ function scanList(scanner: Scanner): string {
 }
 
 function scanOption(scanner: Scanner, name: string): Option {
-  const description = scanText(scanner);
+  const description = scanText(scanner, 2);
   assert(description);
   return {
     name,
@@ -157,16 +183,17 @@ function scanOptions(scanner: Scanner): Array<Option> {
   const options: Array<Option> = [];
   let lastIndex = scanner.index;
   while (!scanner.atEnd()) {
-    if (scanner.peek(/##\s*\S/)) {
+    if (scanner.peek(/##\s*[^\s#]/)) {
       // Next section is starting.
       break;
     }
 
-    if (scanner.scan(/###\s*`([^\n`]+)`\s*\n/)) {
+    if (scanner.scan(/###\s*`([^\n`]+?)`\s*\n/)) {
       const name = scanner.captures?.[0];
       assert(name);
       options.push(scanOption(scanner, name));
     }
+    scanWhitespace(scanner);
 
     assert(scanner.index !== lastIndex);
     lastIndex = scanner.index;
@@ -195,7 +222,7 @@ function scanParagraph(scanner: Scanner): string {
  * Scans text (paragraphs, fenced code blocks, lists) up until the next section
  * header, or until the end of the input if no such header exists.
  */
-function scanText(scanner: Scanner): string {
+function scanText(scanner: Scanner, inset: number = 0): string {
   let text = '';
   let lastIndex = scanner.index;
   while (!scanner.atEnd()) {
@@ -205,19 +232,20 @@ function scanText(scanner: Scanner): string {
     }
     const fenced = scanFenced(scanner);
     if (fenced) {
-      text = text.length ? `${text}\n${fenced}` : fenced;
+      const formatted = formatFenced(fenced, inset);
+      text = text.length ? `${text}\n${formatted}` : formatted;
       continue;
     }
     const list = scanList(scanner);
     if (list) {
-      text = text.length ? `${text}\n${formatList(list)}` : formatList(list);
+      const formatted = formatList(list, inset);
+      text = text.length ? `${text}\n${formatted}` : formatted;
       continue;
     }
     const paragraph = scanParagraph(scanner);
     if (paragraph) {
-      text = text.length
-        ? `${text}\n${formatParagraph(paragraph)}`
-        : formatParagraph(paragraph);
+      const formatted = formatParagraph(paragraph, inset);
+      text = text.length ? `${text}\n${formatted}` : formatted;
       continue;
     }
     assert(scanner.index !== lastIndex);

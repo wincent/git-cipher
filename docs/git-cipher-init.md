@@ -50,3 +50,12 @@ Overwrites any existing secrets at `.git-cipher/secrets.asc.json`.
 ### `--recipients`
 
 Documentation here.
+
+- This shows that I can nest lists...
+- ...inside of an option. Going to make this item longer so that I can see it wrapping onto the next line also.
+
+```
+# And can do fenced code too.
+```
+
+And of course normal paragraphs.
