@@ -29,6 +29,20 @@ export async function execute(invocation: Invocation): Promise<number> {
     return 1;
   }
 
+  const errors = await config.checkConfig();
+  if (errors.length) {
+    log.error(
+      'config errors detected that may be fixed by running `git cipher init`'
+    );
+    if (log.getLogLevel() < log.DEBUG) {
+      log.info('re-run with `--debug` for more information');
+    }
+    for (const error of errors) {
+      log.debug(error);
+    }
+    return 1;
+  }
+
   const secrets = await config.readPublicSecrets();
   if (!secrets) {
     log.error('unable to decrypt secrets');

@@ -6,7 +6,6 @@
 import assert from 'node:assert';
 import {chmod, open, mkdir, readFile} from 'node:fs/promises';
 import {join} from 'node:path';
-import {env} from 'node:process';
 
 import Config from '../Config.mjs';
 import {isErrnoException} from '../assert.mjs';
@@ -24,11 +23,7 @@ import gpg from '../gpg.mjs';
 import hex from '../hex.mjs';
 import * as log from '../log.mjs';
 import markdown from '../markdown.mjs';
-import {bin} from '../paths.mjs';
 import {describeResult} from '../run.mjs';
-import shellEscape from '../shellEscape.mjs';
-
-const __DEV__ = !!env['__DEV__'];
 
 export const description = 'what this thing does';
 
@@ -145,11 +140,7 @@ export async function execute(invocation: Invocation): Promise<number> {
     }
   }
 
-  const tool = __DEV__
-    ? shellEscape(join(bin, 'git-cipher')) || 'git-cipher'
-    : 'git-cipher';
-
-  if (!(await config.initConfig(tool))) {
+  if (!(await config.initConfig())) {
     return 1;
   }
 
@@ -163,7 +154,7 @@ export async function execute(invocation: Invocation): Promise<number> {
   const hookContents = dedent(`
     #!/bin/sh
 
-    ${tool} hook
+    ${config.toolPath()} hook
   `);
   try {
     // Try to write but error if already exists.

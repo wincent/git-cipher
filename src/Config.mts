@@ -6,18 +6,23 @@
 import assert from 'node:assert';
 import {chmod, mkdir, readFile, rm, writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
+import {env} from 'node:process';
 
 import {isErrnoException, assertHasKey, assertIsObject} from './assert.mjs';
 import git from './git.mjs';
 import gpg from './gpg.mjs';
 import * as log from './log.mjs';
+import {bin} from './paths.mjs';
 import {describeResult} from './run.mjs';
+import shellEscape from './shellEscape.mjs';
 
 export type Secrets = {
   authenticationKey: string;
   encryptionKey: string;
   salt: string;
 };
+
+const __DEV__ = !!env['__DEV__'];
 
 export default class Config {
   _gitDir?: string | null;
@@ -26,7 +31,37 @@ export default class Config {
   _topLevel?: string | null;
   _untrackedManagedFiles?: Array<string> | null;
 
-  constructor() {}
+  async checkConfig(): Promise<Array<string>> {
+    const errors = [];
+    for (const [key, expected] of Object.entries(this.gitConfig())) {
+      const result = await git('config', key);
+
+      // Distinguish between low severity errors (like missing/incorrect values)
+      // and high severity ones (invalid files, `git config` process problems)
+      // which should be logged loudly and cause us to immediately `break`.
+      if (result.status === 1) {
+        errors.push(`no value for ${key}`);
+      } else if (result.status === 3) {
+        const error = 'config file is invalid';
+        log.error(error);
+        errors.push(error);
+        break;
+      } else if (!result.success) {
+        const error = describeResult(result);
+        log.error(error);
+        errors.push(error);
+        break;
+      } else {
+        const actual = result.stdout.toString().trim();
+        if (actual !== expected) {
+          errors.push(
+            `value for ${key} (${actual}) does not match expected (${expected})`
+          );
+        }
+      }
+    }
+    return errors;
+  }
 
   /**
    * Returns Git directory, or `null` if it cannot be found.
@@ -62,6 +97,20 @@ export default class Config {
     return this._hooksPath;
   }
 
+  gitConfig(): {[name: string]: string} {
+    const tool = this.toolPath();
+    return {
+      'diff.git-cipher.binary': 'true',
+      'diff.git-cipher.cachetextconv': 'true',
+      'diff.git-cipher.textconv': `${tool} textconv`,
+      'filter.git-cipher.clean': `${tool} clean %f`,
+      'filter.git-cipher.smudge': `${tool} smudge %f`,
+      'merge.git-cipher.driver': `${tool} merge %O %A %B %L %P`,
+      'merge.git-cipher.name': `git-cipher merge driver for merging encrypted files`,
+      'merge.renormalize': 'true',
+    };
+  }
+
   async hasDirtyWorktree(): Promise<boolean | null> {
     let result = await git(
       'update-index',
@@ -90,21 +139,9 @@ export default class Config {
   /**
    * See also: `lockConfig()`, `unlockConfig()`.
    */
-  async initConfig(tool: string): Promise<boolean> {
+  async initConfig(): Promise<boolean> {
     let success = true;
-    for (const [key, value] of [
-      ['filter.git-cipher.clean', `${tool} clean %f`],
-      ['filter.git-cipher.smudge', `${tool} smudge %f`],
-      ['diff.git-cipher.textconv', `${tool} textconv`],
-      ['diff.git-cipher.binary', 'true'],
-      ['diff.git-cipher.cachetextconv', 'true'],
-      ['merge.git-cipher.driver', `${tool} merge %O %A %B %L %P`],
-      [
-        'merge.git-cipher.name',
-        `git-cipher merge driver for merging encrypted files`,
-      ],
-      ['merge.renormalize', 'true'],
-    ] as const) {
+    for (const [key, value] of Object.entries(this.gitConfig())) {
       const result = await git('config', key, value);
       if (!result.success) {
         log.error(describeResult(result));
@@ -256,6 +293,12 @@ export default class Config {
         throw error;
       }
     }
+  }
+
+  toolPath(): string {
+    return __DEV__
+      ? shellEscape(join(bin, 'git-cipher')) || 'git-cipher'
+      : 'git-cipher';
   }
 
   /**
