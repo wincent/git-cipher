@@ -115,6 +115,13 @@ if [[ ! -x "$N_EXE" ]]; then
   exit 1
 fi
 
+if ! "$N_EXE" which "$NODE_VERSION" &> /dev/null; then
+  log_info "Installing NodeJS $NODE_VERSION"
+  "$N_EXE" "$NODE_VERSION"
+else
+  log_debug "Using existing NodeJS $NODE_VERSION installation"
+fi
+
 if [ ! -e "$YARN_INTEGRITY" ]; then
   log_error "No artifact at $YARN_INTEGRITY; did you forget to \`yarn\`? (running now)"
   yarn > /dev/null
@@ -124,13 +131,6 @@ fi
 if [ ! -e "$MAIN" ]; then
   log_error "No build artifact at $MAIN; did you forget to \`yarn run tsc\`? (running now)"
   yarn run tsc > /dev/null
-fi
-
-if ! "$N_EXE" which "$NODE_VERSION" &> /dev/null; then
-  log_info "Installing NodeJS $NODE_VERSION"
-  "$N_EXE" "$NODE_VERSION"
-else
-  log_debug "Using existing NodeJS $NODE_VERSION installation"
 fi
 
 if [[ $BUILD -eq 1 ]]; then
