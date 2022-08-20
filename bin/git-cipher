@@ -38,7 +38,7 @@ node() {
 }
 
 yarn() {
-  node "$YARN_EXE" "$@"
+  node "$YARN_EXE" --cwd "$ROOT" "$@"
 }
 
 # ANSI color codes.
