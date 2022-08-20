@@ -39,42 +39,42 @@ export async function execute(invocation: Invocation): Promise<number> {
   }
 
   const passphrase = await generateRandomPassphrase();
-  log.debug(`pass ${hex(passphrase)}`);
+  log.debug(`pass\n${hex(passphrase)}`);
 
   const authenticationKey = await generateRandom();
-  log.debug(`authenticationKey ${hex(authenticationKey)}`);
+  log.debug(`authenticationKey\n${hex(authenticationKey)}`);
 
   const base = await generateRandom();
-  log.debug(`base ${hex(base)}`);
+  log.debug(`base\n${hex(base)}`);
 
   const keySalt = await generateKeySalt();
-  log.debug(`keySalt ${hex(keySalt)}`);
+  log.debug(`keySalt\n${hex(keySalt)}`);
 
   const derived = await deriveKey(passphrase, keySalt);
-  log.debug(`derived (1 of 2) ${hex(derived)}`);
+  log.debug(`derived (1 of 2)\n${hex(derived)}`);
 
   const derived2 = await deriveKey(passphrase, keySalt);
-  log.debug('derived (2 of 2)', hex(derived2));
+  log.debug(`derived (2 of 2)\n${hex(derived2)}`);
 
   log.debug(`filename ${filename}`);
 
   const contents = await readFile(filename);
-  log.debug(`contents ${hex(contents)}`);
+  log.debug(`contents\n${hex(contents)}`);
 
   const salt = await generateFileSalt(filename, contents, base);
   log.debug(`salt (1 of 2) ${hex(salt)}`);
 
   const salt2 = await generateFileSalt(filename, contents, base);
-  log.debug('salt (2 of 2)', hex(salt2));
+  log.debug(`salt (2 of 2) ${hex(salt2)}`);
 
   const ciphertext = await encrypt(contents, derived, salt);
-  log.debug(`ciphertext (1 of 2) ${hex(ciphertext)}`);
+  log.debug(`ciphertext (1 of 2)\n${hex(ciphertext)}`);
 
   const ciphertext2 = await encrypt(contents, derived, salt);
-  log.debug('ciphertext (2 of 2)', hex(ciphertext2));
+  log.debug(`ciphertext (2 of 2)\n${hex(ciphertext2)}`);
 
   const theMac = await mac(filename, salt, ciphertext, authenticationKey);
-  log.debug(`the mac ${hex(theMac)}`);
+  log.debug(`the mac\n${hex(theMac)}`);
 
   const verifies = await verify(
     theMac,
@@ -86,10 +86,10 @@ export async function execute(invocation: Invocation): Promise<number> {
   log.debug(`verifies? ${verifies}`);
 
   const plaintext = await decrypt(ciphertext, derived, salt);
-  log.debug(`plaintext (1 of 2) ${hex(plaintext)}`);
+  log.debug(`plaintext (1 of 2)\n${hex(plaintext)}`);
 
   const plaintext2 = await decrypt(ciphertext, derived, salt);
-  log.debug('plaintext (1 of 2)', hex(plaintext2));
+  log.debug(`plaintext (1 of 2)\n${hex(plaintext2)}`);
 
   log.debug(plaintext.toString('utf8'));
 
