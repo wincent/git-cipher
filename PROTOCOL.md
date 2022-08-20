@@ -132,10 +132,6 @@ Observations:
 
 - While `.gitattributes` supports globs (see `man gitattributes`), `git-cipher add` only ever adds or removes entries for individual files. This is because git-cipher is not intended as a mass-encryption tool that would encrypt the bulk of the contents fo a large repository; rather it is intended to used judiciously to protect a small number of low-value secrets. If you wish to protect a large number of secrets, or the value of the individual secrets is higher, another solution would probably be better suited.
 
-## `git-cipher remove`
-
-TODO: impl
-
 ## `git-cipher ls`
 
 Lists files under management by git-cipher. A similar effect can be achieved by inspecting the `.gitattributes` file and looking for lines matching `filter=git-cipher`. A `--verbose` flag also runs some additional checks on each of the managed files.
