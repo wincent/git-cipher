@@ -21,8 +21,22 @@ git cipher help
 
 ## Commands
 
+- [`git cipher add`](docs/git-cipher-add.md)
+- [`git cipher clean`](docs/git-cipher-clean.md)
+- [`git cipher demo`](docs/git-cipher-demo.md)
+- [`git cipher diff`](docs/git-cipher-diff.md)
+- [`git cipher help`](docs/git-cipher-help.md)
+- [`git cipher hook`](docs/git-cipher-hook.md)
+- [`git cipher init`](docs/git-cipher-init.md)
+- [`git cipher is-encrypted`](docs/git-cipher-is-encrypted.md)
+- [`git cipher lock`](docs/git-cipher-lock.md)
+- [`git cipher log`](docs/git-cipher-log.md)
+- [`git cipher ls`](docs/git-cipher-ls.md)
+- [`git cipher merge`](docs/git-cipher-merge.md)
+- [`git cipher show`](docs/git-cipher-show.md)
+- [`git cipher smudge`](docs/git-cipher-smudge.md)
+- [`git cipher textconv`](docs/git-cipher-textconv.md)
 - [`git cipher unlock`](docs/git-cipher-unlock.md)
-- etc
 
 ## How it works
 
