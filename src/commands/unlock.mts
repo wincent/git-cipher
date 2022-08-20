@@ -49,7 +49,6 @@ export async function execute(invocation: Invocation): Promise<number> {
     return 1;
   }
 
-  // TODO: check that other config is valid/present (eg. clean/smudge filter)
   await config.unlockConfig();
 
   await config.writePrivateSecrets(secrets);
