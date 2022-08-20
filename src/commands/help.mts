@@ -27,7 +27,6 @@ export async function execute(invocation: Invocation): Promise<number> {
     }
     const command = invocation.args[0];
     assert(command);
-    // TODO: usage mode (which just shows short descriptions from optionsSchema)
     if (COMMANDISH.test(command)) {
       try {
         const file = command + '.mjs';
@@ -61,6 +60,7 @@ export async function execute(invocation: Invocation): Promise<number> {
   }
 
   const commands: {[name: string]: string} = {};
+  log.printLine('Available subcommands:\n');
   for (const file of await readdir(directory)) {
     if (extname(file) === '.mjs') {
       try {

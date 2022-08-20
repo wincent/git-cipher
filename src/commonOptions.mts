@@ -9,6 +9,11 @@ const commonOptions = {
     kind: 'switch',
     description: 'short',
   },
+  '--help': {
+    defaultValue: false,
+    kind: 'switch',
+    description: 'show usage information and exit',
+  },
   '--quiet': {
     defaultValue: false,
     kind: 'switch',

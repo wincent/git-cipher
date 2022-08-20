@@ -4,6 +4,7 @@
  */
 
 import assert from 'node:assert';
+import {stdout} from 'node:process';
 
 /**
  * Wraps `text` within specified `width` using a basic version of the approach
@@ -57,4 +58,17 @@ export default function wrap(text: string, width: number = 72): string {
     }
   }
   return output;
+}
+
+export function wrapWithInset(text: string, inset: number): string {
+  return wrap(text, wrapWidth() - inset * 2).replace(
+    /([^\n]*)\n/g,
+    (_, line) => {
+      return line ? `${' '.repeat(inset)}${line}\n` : `${line}\n`;
+    }
+  );
+}
+
+function wrapWidth(): number {
+  return Math.max(4, stdout.columns - 2) || 72;
 }

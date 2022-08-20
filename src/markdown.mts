@@ -4,14 +4,13 @@
  */
 
 import assert from 'node:assert';
-import {stdout} from 'node:process';
 import {readFile} from 'node:fs/promises';
 import {join} from 'node:path';
 
 import Scanner from './Scanner.mjs';
 import {assertIsObject, assertHasKey} from './assert.mjs';
 import {docs} from './paths.mjs';
-import wrap from './wrap.mjs';
+import {wrapWithInset} from './wrap.mjs';
 
 type Option = {
   name: string;
@@ -125,15 +124,6 @@ function formatList(text: string, inset: number = 0): string {
 
 function formatParagraph(text: string, inset: number = 0): string {
   return wrapWithInset(text, inset);
-}
-
-function wrapWithInset(text: string, inset: number): string {
-  return wrap(text, wrapWidth() - inset * 2).replace(
-    /([^\n]*)\n/g,
-    (_, line) => {
-      return line ? `${' '.repeat(inset)}${line}\n` : `${line}\n`;
-    }
-  );
 }
 
 function scanFenced(scanner: Scanner): string {
@@ -257,8 +247,4 @@ function scanText(scanner: Scanner, inset: number = 0): string {
 
 function scanWhitespace(scanner: Scanner): string | undefined {
   return scanner.scan(/\s+/);
-}
-
-function wrapWidth(): number {
-  return Math.max(4, stdout.columns - 2) || 72;
 }

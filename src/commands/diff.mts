@@ -15,5 +15,5 @@ export async function execute(invocation: Invocation): Promise<number> {
 }
 
 export const optionsSchema = {
-  ...revealSchema,
+  ...revealSchema(),
 } as const;
