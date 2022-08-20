@@ -43,7 +43,7 @@ export async function execute(invocation: Invocation): Promise<number> {
     return 1;
   }
 
-  const secrets = await config.readPublicSecrets();
+  const secrets = await config.decryptPublicSecrets();
   if (!secrets) {
     log.error('unable to decrypt secrets');
     return 1;

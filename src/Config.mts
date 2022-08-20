@@ -63,6 +63,38 @@ export default class Config {
     return errors;
   }
 
+  async decryptPublicSecrets(): Promise<Secrets | null> {
+    const file = await this.readPublicSecrets();
+    if (!file) {
+      log.error('unable to read public secrets');
+      return null;
+    }
+    const result = await gpg(
+      '--quiet',
+      '--yes',
+      '--batch',
+      '--no-tty',
+      '--use-agent',
+      '--output',
+      '-',
+      '--decrypt',
+      {
+        stdin: file,
+      }
+    );
+    if (!result.success) {
+      log.error(describeResult(result));
+      return null;
+    }
+    const secrets = JSON.parse(result.stdout.toString());
+    assertIsSecrets(secrets);
+    return {
+      authenticationKey: secrets.authenticationKey,
+      encryptionKey: secrets.encryptionKey,
+      salt: secrets.salt,
+    };
+  }
+
   /**
    * Returns Git directory, or `null` if it cannot be found.
    */
@@ -151,6 +183,23 @@ export default class Config {
     return success;
   }
 
+  async isInitialized(): Promise<boolean> {
+    const errors = await this.checkConfig();
+    if (errors.length) {
+      return false;
+    }
+    const secrets = await this.readPublicSecrets();
+    if (!secrets) {
+      return false;
+    }
+    return true;
+  }
+
+  async isUnlocked(): Promise<boolean> {
+    const secrets = await this.readPrivateSecrets();
+    return !!secrets;
+  }
+
   /**
    * See also: `initConfig()`, `unlockConfig()`.
    */
@@ -233,36 +282,19 @@ export default class Config {
     }
   }
 
-  async readPublicSecrets(): Promise<Secrets | null> {
+  async readPublicSecrets(): Promise<Buffer | null> {
     const publicSecretsPath = await this.publicSecretsPath();
     assert(publicSecretsPath);
-    const file = await readFile(publicSecretsPath);
-    const result = await gpg(
-      '--quiet',
-      '--yes',
-      '--batch',
-      '--no-tty',
-      '--use-agent',
-      '--output',
-      '-',
-      '--decrypt',
-      {
-        stdin: file,
+    try {
+      const file = await readFile(publicSecretsPath);
+      return file;
+    } catch (error) {
+      if (!isErrnoException(error) || error.code !== 'ENOENT') {
+        throw error;
       }
-    );
-    if (!result.success) {
-      log.error(describeResult(result));
       return null;
     }
-    const secrets = JSON.parse(result.stdout.toString());
-    assertIsSecrets(secrets);
-    return {
-      authenticationKey: secrets.authenticationKey,
-      encryptionKey: secrets.encryptionKey,
-      salt: secrets.salt,
-    };
   }
-
   async readPrivateSecrets(): Promise<Secrets | null> {
     const privateSecretsPath = await this.privateSecretsPath();
     assert(privateSecretsPath);

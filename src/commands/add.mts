@@ -25,6 +25,26 @@ export async function execute(invocation: Invocation): Promise<number> {
 
   const config = new Config();
 
+  const topLevel = await config.topLevel();
+  if (!topLevel) {
+    log.error('cannot do `add` operation without top-level');
+    return 1;
+  }
+
+  const initialized = await config.isInitialized();
+  if (!initialized) {
+    log.error(
+      'repository is not properly initialized; have you run `git cipher init`?'
+    );
+    return 1;
+  }
+
+  const unlocked = await config.isUnlocked();
+  if (!unlocked) {
+    log.error('repository is not unlocked; have you run `git cipher unlock`?');
+    return 1;
+  }
+
   // Note: these are relative to the top-level.
   const managedFiles = await config.managedFiles();
   if (!managedFiles) {
@@ -37,12 +57,6 @@ export async function execute(invocation: Invocation): Promise<number> {
   // Git is only going to tell us about tracked files
   // TODO: see if `git ls-files --others` would help here (would have to invoke
   // it separately, because with `--others`, we don't show tracked files)
-
-  const topLevel = await config.topLevel();
-  if (!topLevel) {
-    log.error('cannot do `add` operation without top-level');
-    return 1;
-  }
 
   const filesToAdd = [];
   const managedFilesSet = new Set(managedFiles);
