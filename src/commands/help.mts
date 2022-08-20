@@ -12,7 +12,7 @@ import * as log from '../log.mjs';
 import markdown, {assertMarkdown} from '../markdown.mjs';
 import {assertOptionsSchema} from '../parseOptions.mjs';
 
-const COMMANDISH = /^\w+$/;
+const COMMANDISH = /^\w+(?:-\w+)*$/;
 
 export const description = 'prints usage information';
 
@@ -38,10 +38,11 @@ export async function execute(invocation: Invocation): Promise<number> {
         assertOptionsSchema(optionsSchema);
         log.print(documentation.text);
 
-        if (documentation.options.length) {
+        const options = Object.values(documentation.options);
+        if (options.length) {
           log.printLine('\nOptions');
           log.printLine('-------\n');
-          for (const option of documentation.options) {
+          for (const option of options) {
             log.printLine(`${option.name}\n`);
             if (option.description) {
               log.printLine(`${option.description}`);

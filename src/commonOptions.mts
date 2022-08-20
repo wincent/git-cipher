@@ -7,7 +7,7 @@ const commonOptions = {
   '--debug': {
     defaultValue: false,
     kind: 'switch',
-    description: 'short',
+    description: 'show debug information',
   },
   '--help': {
     defaultValue: false,
@@ -17,7 +17,7 @@ const commonOptions = {
   '--quiet': {
     defaultValue: false,
     kind: 'switch',
-    description: 'short',
+    description: 'reduce verbosity',
   },
   '--verbose': {
     defaultValue: false,

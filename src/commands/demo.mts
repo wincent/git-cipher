@@ -29,7 +29,7 @@ import markdown from '../markdown.mjs';
 
 export const description = 'what this thing does';
 
-export const documentation = await markdown('git-cipher-markdown');
+export const documentation = await markdown('git-cipher-demo');
 
 export async function execute(invocation: Invocation): Promise<number> {
   const filename = invocation.args[0] || 'package.json';

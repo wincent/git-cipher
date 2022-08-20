@@ -59,3 +59,7 @@ Documentation here.
 ```
 
 And of course normal paragraphs.
+
+## See also
+
+- [Common options](common-options.md)

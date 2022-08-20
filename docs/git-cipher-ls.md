@@ -1,3 +1,5 @@
+# `git cipher ls`
+
 Shows the set of files managed by `git-cipher` in the current repository.
 
 This is effectively provided as a convenience because the same information is available in the ".gitattributes" file, albeit in a less readable format.
@@ -27,3 +29,7 @@ examples/file (index=encrypted, worktree=decrypted)
 ```
 
 Note that a status of "index=decrypted" is always a problem, because it indicates that plaintext was staged in the index and may be committed. The `git-cipher ls` subcommand will print such lines using bold, red highlighting.
+
+## See also
+
+- [Common options](common-options.md)

@@ -19,7 +19,7 @@ type Option = {
 
 type Markdown = {
   text: string;
-  options: Array<Option>;
+  options: {[name: string]: Option};
 };
 
 /**
@@ -34,7 +34,9 @@ type Markdown = {
  * - Options appear under an "## Options" section, and each option uses an
  *   "### `--option-name`" subheading; options continue until the next
  *   "## Section", or the end of the document.
- * - No links.
+ * - No links, other than this special case: a `## See also` section followed by
+ *   a list of relative links is interpreted as a list of other documents whose
+ *   contents should be textually included (similar to a C preprocessor include).
  * - No footnotes.
  *
  * In other words, it is not intended to handle anything like "PROTOCOL.md", but
@@ -42,17 +44,45 @@ type Markdown = {
  */
 export default async function markdown(command: string): Promise<Markdown> {
   const contents = await readFile(join(docs, `${command}.md`), 'utf8');
-  const scanner = new Scanner(contents);
+  let scanner = new Scanner(contents);
   const result: Markdown = {
     text: '',
-    options: [],
+    options: {},
   };
 
   let lastIndex = scanner.index;
   while (!scanner.atEnd()) {
     scanWhitespace(scanner);
+    if (scanner.scan(/##\s*See also\s*\n/i)) {
+      scanWhitespace(scanner);
+
+      // Expect a list of links to other files that should be included.
+      const list = scanList(scanner);
+      assert(list);
+
+      const includes: Array<string> = [];
+      list.replace(/- ([^\n]+)\n*/g, (_, link) => {
+        const match = link.match(/^\s*\[[^\]]+\]\(([^)]+)\)\s*$/);
+        assert(match);
+        includes.push(match[1]);
+        return '';
+      });
+
+      for (const file of includes) {
+        const included = await readFile(join(docs, file), 'utf8');
+
+        // Splice included file into remaining output, using a new Scanner.
+        scanner = new Scanner(included + scanner.remaining);
+        lastIndex = -1;
+      }
+    }
     if (scanner.scan(/##\s*Options\s*\n/)) {
-      result.options = scanOptions(scanner);
+      // Do "reverse" merge (first seen wins) to support the standard pattern,
+      // which is: (1) Command-specific options; (2) Common options.
+      result.options = {
+        ...scanOptions(scanner),
+        ...result.options,
+      };
       continue;
     }
     const heading = scanHeading(scanner);
@@ -80,9 +110,9 @@ export function assertMarkdown(value: unknown): asserts value is Markdown {
   assertHasKey(value, 'text');
   assert(typeof value.text === 'string');
   assertHasKey(value, 'options');
-  assert(Array.isArray(value.options));
+  assertIsObject(value.options);
 
-  for (const option of value.options) {
+  for (const option of Object.values(value.options)) {
     assertIsObject(option);
     assertHasKey(option, 'name');
     assert(typeof option.name === 'string');
@@ -102,7 +132,7 @@ function formatHeading(text: string): string {
     .replace(/^#\s*([^\n]+)\n/g, (_, title) => {
       return title + '\n' + '='.repeat(title.length) + '\n';
     })
-    .replace(/^#+s*([^\n]+)\n/g, (_, title) => {
+    .replace(/^#+\s*([^\n]+)\n/g, (_, title) => {
       return title + '\n' + '-'.repeat(title.length) + '\n';
     });
 }
@@ -170,8 +200,8 @@ function scanOption(scanner: Scanner, name: string): Option {
   };
 }
 
-function scanOptions(scanner: Scanner): Array<Option> {
-  const options: Array<Option> = [];
+function scanOptions(scanner: Scanner): {[name: string]: Option} {
+  const options: {[name: string]: Option} = {};
   let lastIndex = scanner.index;
   while (!scanner.atEnd()) {
     if (scanner.peek(/##\s*[^\s#]/)) {
@@ -182,7 +212,7 @@ function scanOptions(scanner: Scanner): Array<Option> {
     if (scanner.scan(/###\s*`([^\n`]+?)`\s*\n/)) {
       const name = scanner.captures?.[0];
       assert(name);
-      options.push(scanOption(scanner, name));
+      options[name] = scanOption(scanner, name);
     }
     scanWhitespace(scanner);
 
