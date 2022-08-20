@@ -162,6 +162,15 @@ export default class Config {
       return true;
     } else if (result.status === 0) {
       return false;
+    } else if (result.stderr.toString().includes('HEAD')) {
+      // In a new repo with no commits yet; will see something like:
+      //
+      //   fatal: ambiguous argument 'HEAD': unknown revision or path not in the working tree.
+      //
+      // The string may be localized though, so our test has to be loose and may
+      // not be 100% accurate; consider this to be equivalent to a dirty
+      // worktree.
+      return true;
     } else {
       log.error(describeResult(result));
       return null;
