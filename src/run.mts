@@ -69,7 +69,6 @@ export default async function run(
       resolve(result);
     });
 
-    // TODO let caller have a buffer... or maybe... always give them a buffer
     child.stdout.on('data', (data) => {
       result.stdout = Buffer.concat([result.stdout, data]);
     });
