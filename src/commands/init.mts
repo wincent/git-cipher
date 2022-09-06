@@ -25,7 +25,7 @@ import * as log from '../log.mjs';
 import markdown from '../markdown.mjs';
 import {describeResult} from '../run.mjs';
 
-export const description = 'what this thing does';
+export const description = 'prepares a repository to work with git-cipher';
 
 export const documentation = await markdown('git-cipher-init');
 

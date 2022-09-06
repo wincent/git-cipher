@@ -13,7 +13,7 @@ import parse from '../parse.mjs';
 import {describeResult} from '../run.mjs';
 import shellEscape from '../shellEscape.mjs';
 
-export const description = 'what this thing does';
+export const description = 'Git pre-commit hook to detect encryption problems';
 
 export const documentation = await markdown('git-cipher-hook');
 

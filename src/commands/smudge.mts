@@ -12,7 +12,7 @@ import * as log from '../log.mjs';
 import markdown from '../markdown.mjs';
 import smudge from '../smudge.mjs';
 
-export const description = 'decrypts file contents';
+export const description = 'decrypts file contents (Git filter)';
 
 export const documentation = await markdown('git-cipher-smudge');
 

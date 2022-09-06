@@ -12,7 +12,7 @@ import commonOptions from '../commonOptions.mjs';
 import * as log from '../log.mjs';
 import markdown from '../markdown.mjs';
 
-export const description = 'encrypts file contents';
+export const description = 'encrypts file contents (Git filter)';
 
 export const documentation = await markdown('git-cipher-clean');
 

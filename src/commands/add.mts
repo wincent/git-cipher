@@ -13,7 +13,7 @@ import * as log from '../log.mjs';
 import markdown from '../markdown.mjs';
 import {describeResult} from '../run.mjs';
 
-export const description = 'what this thing does';
+export const description = 'adds file(s) to set of encrypted files';
 
 export const documentation = await markdown('git-cipher-add');
 

@@ -15,7 +15,7 @@ import * as log from '../log.mjs';
 import markdown from '../markdown.mjs';
 import parse from '../parse.mjs';
 
-export const description = 'Lists encrypted files';
+export const description = 'lists encrypted files';
 
 export const documentation = await markdown('git-cipher-ls');
 

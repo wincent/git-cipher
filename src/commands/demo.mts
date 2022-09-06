@@ -27,7 +27,7 @@ import hex from '../hex.mjs';
 import * as log from '../log.mjs';
 import markdown from '../markdown.mjs';
 
-export const description = 'what this thing does';
+export const description = 'shows cryptographic primitives operating on sample data';
 
 export const documentation = await markdown('git-cipher-demo');
 
