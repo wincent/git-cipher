@@ -1,3 +1,7 @@
+# next (not yet released)
+
+- ...
+
 # 2.0.0-pre.2 (10 September 2022)
 
 - Basically feature complete.
