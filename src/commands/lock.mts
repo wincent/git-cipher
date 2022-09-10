@@ -9,7 +9,8 @@ import markdown from '../markdown.mjs';
 import removeCachedPlaintext from '../removeCachedPlaintext.mjs';
 import resetManagedFiles from '../resetManagedFiles.mjs';
 
-export const description = 'locks the current repositry, replacing decrypted files with ciphertext';
+export const description =
+  'locks the current repositry, replacing decrypted files with ciphertext';
 
 export const documentation = await markdown('git-cipher-lock');
 
