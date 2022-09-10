@@ -169,7 +169,7 @@ gpg --edit-key greg@hurrell.net # or $GPG_USER
 ## Publishing releases
 
 ```sh
-yarn version --patch # Or similar.
+yarn version --prerelease # Or similar.
 yarn format:check
 yarn compile
 git tag -s v2.0.0-pre.2 -m "v2.0.0-pre.2 release"
