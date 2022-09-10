@@ -48,18 +48,6 @@ Files are added to the list of managed files with `git-cipher add`. These are ad
 
 ## Installation
 
-`git-cipher` is a single Ruby script with no major dependencies beyond [Ruby](https://www.ruby-lang.org/), [Git](http://git-scm.com/), and [GnuPG](https://www.gnupg.org/). As such, it can be run directly from the repo:
-
-```sh
-git clone https://github.com/wincent/git-cipher.git
-```
-
-Alternatively, you can install the Gem:
-
-```sh
-gem install git-cipher
-```
-
 **Note:** If you install the `git-cipher` executable somewhere in your `$PATH`, Git will treat it as a subcommand, which means you can invoke it as `git cipher`. Otherwise, you will have to provide the full path to the `git-cipher` executable.
 
 To install the external prerequisites, use your preferred method. For example, on macOS you might choose to use [Homebrew](http://brew.sh/):
@@ -178,13 +166,13 @@ gpg --edit-key greg@hurrell.net # or $GPG_USER
 
 `git-cipher` was hacked together by Greg Hurrell (<greg@hurrell.net>).
 
-## Development
-
-This is minimal, currently with no tests, no Bundler, no Rakefile. To cut a new release, update the version number in the gemspec and:
+## Publishing releases
 
 ```sh
-git tag -s 0.2 -m "0.2 release"
-git push --follow-tags origin main
-gem build git-cipher.gemspec
-gem push git-cipher-0.2.gem
+yarn version --patch # Or similar.
+yarn format:check
+yarn compile
+git tag -s v2.0.0-pre.2 -m "v2.0.0-pre.2 release"
+git push --follow-tags origin next
+yarn publish
 ```
