@@ -1,5 +1,7 @@
 # `git cipher unlock`
 
+Decrypts encrypted files in the worktree.
+
 ## Options
 
 ### `--force`
