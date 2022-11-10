@@ -82,31 +82,31 @@ done
 
 log_debug() {
   if [[ $LOG_LEVEL -ge $LOG_LEVEL_DEBUG ]]; then
-    echo -e "${PURPLE}[debug]  ${RESET} $*" > /dev/stderr
+    echo -e "${PURPLE}[debug]  ${RESET} $*" >&2
   fi
 }
 
 log_error() {
   if [[ $LOG_LEVEL -ge $LOG_LEVEL_ERROR ]]; then
-    echo -e "${RED}[error]  ${RESET} $*" > /dev/stderr
+    echo -e "${RED}[error]  ${RESET} $*" >&2
   fi
 }
 
 log_info() {
   if [[ $LOG_LEVEL -ge $LOG_LEVEL_INFO ]]; then
-    echo -e "${BOLD}[info]   ${RESET} $*" > /dev/stderr
+    echo -e "${BOLD}[info]   ${RESET} $*" >&2
   fi
 }
 
 log_notice() {
   if [[ $LOG_LEVEL -ge $LOG_LEVEL_NOTICE ]]; then
-    echo -e "${GREEN}[notice] ${RESET} $*" > /dev/stderr
+    echo -e "${GREEN}[notice] ${RESET} $*" >&2
   fi
 }
 
 log_warn() {
   if [[ $LOG_LEVEL -ge $LOG_LEVEL_WARNING ]]; then
-    echo -e "${YELLOW}[warning]${RESET} $*" > /dev/stderr
+    echo -e "${YELLOW}[warning]${RESET} $*" >&2
   fi
 }
 
