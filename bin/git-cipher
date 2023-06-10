@@ -32,6 +32,7 @@ N_EXE="$VENDOR/n/bin/n"
 N_PREFIX="$VENDOR/node"
 YARN_EXE="$VENDOR/yarn/bin/yarn"
 YARN_INTEGRITY="$ROOT/node_modules/.yarn-integrity"
+export N_PREFIX
 
 node() {
   "$N_EXE" exec "$NODE_VERSION" "$@"
