@@ -29,7 +29,7 @@ NODE_VERSION=18.7.0
 VENDOR="$ROOT/vendor"
 MAIN="$ROOT/lib/main.mjs"
 N_EXE="$VENDOR/n/bin/n"
-N_PREFIX="$VENDOR/node"
+export N_PREFIX="$VENDOR/node"
 YARN_EXE="$VENDOR/yarn/bin/yarn"
 YARN_INTEGRITY="$ROOT/node_modules/.yarn-integrity"
 
