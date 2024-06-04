@@ -205,7 +205,7 @@ export const optionsSchema = {
     description: 'overwrite existing secrets',
   },
   '--recipients': {
-    defaultValue: 'greg@hurrell.net,wincent@github.com',
+    defaultValue: 'greg@hurrell.net,greg.hurrell@datadoghq.com',
     kind: 'option',
     required: true,
     description: 'short description',
