@@ -95,7 +95,7 @@ export async function execute(invocation: Invocation): Promise<number> {
   log.debug(plaintext.toString('utf8'));
 
   const cleaned =
-    'magic = com.wincent.git-cipher\n' +
+    'magic = dev.wincent.git-cipher\n' +
     `url = ${PROTOCOL_URL}\n` +
     `version = ${PROTOCOL_VERSION}\n` +
     'algorithm = ' +

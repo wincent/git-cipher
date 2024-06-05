@@ -36,7 +36,7 @@ export default async function clean(
   const hmac = await mac(filename, iv, ciphertext, authenticationKey);
 
   return (
-    'magic = com.wincent.git-cipher\n' +
+    'magic = dev.wincent.git-cipher\n' +
     `url = ${PROTOCOL_URL}\n` +
     `version = ${PROTOCOL_VERSION}\n` +
     'algorithm = ' +
@@ -58,7 +58,7 @@ export default async function clean(
 }
 
 // What we use to detect already-encrypted files.
-const MAGIC_REGEXP = /\s*\bmagic\s*=\s*com\.wincent\.git-cipher\b\s*/;
+const MAGIC_REGEXP = /\s*\bmagic\s*=\s*(com|dev)\.wincent\.git-cipher\b\s*/;
 
 // How far into the file we look to find the magic header.
 const MAGIC_SEARCH_LIMIT = 200;

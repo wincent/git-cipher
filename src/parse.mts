@@ -23,7 +23,7 @@ type ParseSuccess = {
   filename: string;
   hmac: Buffer;
   iv: Buffer;
-  version: 1;
+  version: 1 | 2;
 };
 
 /**
@@ -43,20 +43,25 @@ export default function parse(input: Buffer): ParseResult {
   };
 
   const scanner = new Scanner(input.toString('utf8'));
-  if (!scanner.scan(/\s*magic\s*=\s*com\.wincent\.git-cipher\s*/)) {
+  if (!scanner.scan(/\s*magic\s*=\s*(com|dev)\.wincent\.git-cipher\s*/)) {
     return {kind: 'already-decrypted'};
   }
 
+  let version: 1 | 2 | undefined;
   let lastIndex = scanner.index;
   while (!scanner.atEnd()) {
     scanner.scan(/\s*url\s*=\s*[^\n]+\s*/); // Informational only; ignore.
 
     if (scanner.scan(/\s*version\s*=\s*/)) {
-      const version = scanner.scan(/\d+/);
-      if (version !== '1') {
+      const versionString = scanner.scan(/\d+/);
+      if (versionString === '1') {
+        version = 1;
+      } else if (versionString === '2') {
+        version = 2;
+      } else {
         return {
           kind: 'error',
-          description: `unrecognized version ${version}`,
+          description: `unrecognized version ${versionString}`,
         };
       }
     }
@@ -168,6 +173,6 @@ export default function parse(input: Buffer): ParseResult {
     filename: tokens.filename,
     hmac: Buffer.from(tokens.hmac, 'hex'),
     iv: Buffer.from(tokens.iv, 'hex'),
-    version: 1,
+    version: version || 2,
   };
 }

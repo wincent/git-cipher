@@ -2,6 +2,10 @@
 
 - ...
 
+# 2.0.0-pre.3 (2 July 2024)
+
+- Updated protocol version from 1 to 2.
+
 # 2.0.0-pre.2 (10 September 2022)
 
 - Basically feature complete.

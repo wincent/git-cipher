@@ -1,6 +1,11 @@
 # Version
 
-This document describes version 1 of the git-cipher protocol.
+This document describes version 2 of the git-cipher protocol.
+
+# History
+
+- Version 1 (2022-08-07): Initial version.
+- Version 2 (2024-07-02): The "magic" string was updated from `com.wincent.git-cipher` to `dev.wincent.git-cipher`, and the "version" was bumped from `1` to `2`. This is a cosmetic change because these fields are currently just descriptive metadata, and don't affect the cryptographic properties of the protocol.
 
 # Implementations
 
@@ -148,9 +153,9 @@ This command can be run manually for debugging purposes, but in normal usage, it
 
 Here is an example encrypted file:
 
-    magic = com.wincent.git-cipher
-    url = https://github.com/wincent/git-cipher/blob/v2.0.0-pre.2/PROTOCOL.md
-    version = 1
+    magic = dev.wincent.git-cipher
+    url = https://github.com/wincent/git-cipher/blob/v2.0.0-pre.3/PROTOCOL.md
+    version = 2
     algorithm = aes-256-cbc
     filename = "examples/file"
     iv = c380d4534364071ac8717100d0aba6cb

@@ -18,7 +18,7 @@ import {VERSION} from './version.mjs';
 const randomFill = promisify(randomFillAsync);
 
 export const PROTOCOL_URL = `https://github.com/wincent/git-cipher/blob/v${VERSION}/PROTOCOL.md`;
-export const PROTOCOL_VERSION = 1;
+export const PROTOCOL_VERSION = 2;
 export const BLOCK_CIPHER_ALGORITHM = 'aes-256-cbc';
 
 export const BLOCK_CIPHER_HMAC_SIZE = 32; // 32 bytes = 256 bits.
