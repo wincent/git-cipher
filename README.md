@@ -172,7 +172,6 @@ gpg --edit-key greg@hurrell.net # or $GPG_USER
 yarn format:check
 yarn version --prerelease # Or similar.
 yarn compile
-git tag -s v2.0.0-pre.2 -m "v2.0.0-pre.2 release"
 git push --follow-tags origin next
 yarn publish
 ```
