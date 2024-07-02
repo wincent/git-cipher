@@ -1,6 +1,6 @@
 {
   "name": "git-cipher",
-  "version": "2.0.0-pre.2",
+  "version": "2.0.0-pre.3",
   "bin": "./lib/main.mjs",
   "files": [
     "docs",
