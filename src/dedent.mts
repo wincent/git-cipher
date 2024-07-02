@@ -25,7 +25,7 @@ export default function dedent(text: string): string {
   // Strip out minimum indent from every line.
   const dedented = isFinite(minimum)
     ? lines.map((line: string) =>
-        line.replace(new RegExp(`^${' '.repeat(minimum)}`, 'g'), '')
+        line.replace(new RegExp(`^${' '.repeat(minimum)}`, 'g'), ''),
       )
     : lines;
 

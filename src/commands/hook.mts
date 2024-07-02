@@ -68,7 +68,7 @@ export async function execute(invocation: Invocation): Promise<number> {
       To ignore this \`git-cipher hook\` message and commit anyway, use:
 
           git commit --no-verify
-    `)
+    `),
     );
     return 1;
   }

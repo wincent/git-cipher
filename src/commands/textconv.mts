@@ -22,8 +22,8 @@ export async function execute(invocation: Invocation): Promise<number> {
   if (invocation.args.length !== 1) {
     log.error(
       `expected exactly one filename argument, got: ${invocation.args.join(
-        ' '
-      )}`
+        ' ',
+      )}`,
     );
     return 1;
   }
@@ -50,14 +50,14 @@ export async function execute(invocation: Invocation): Promise<number> {
 
   if (payload.filename !== filename) {
     log.warn(
-      `payload filename (${payload.filename}) does not match passed filename (${filename})`
+      `payload filename (${payload.filename}) does not match passed filename (${filename})`,
     );
   }
 
   const secrets = await config.readPrivateSecrets();
   if (!secrets) {
     log.debug(
-      'cannot do textconv without secrets; do you need to run `git-cipher unlock`?'
+      'cannot do textconv without secrets; do you need to run `git-cipher unlock`?',
     );
     stdout.write(input);
     return 0;

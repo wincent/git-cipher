@@ -24,7 +24,7 @@ export async function execute(invocation: Invocation): Promise<number> {
   const publicDirectory = await config.publicDirectory();
   if (!publicDirectory) {
     log.error(
-      'unable to locate public directory; have you run `git cipher init`?'
+      'unable to locate public directory; have you run `git cipher init`?',
     );
     return 1;
   }
@@ -32,7 +32,7 @@ export async function execute(invocation: Invocation): Promise<number> {
   const errors = await config.checkConfig();
   if (errors.length) {
     log.error(
-      'config errors detected that may be fixed by running `git cipher init`'
+      'config errors detected that may be fixed by running `git cipher init`',
     );
     if (log.getLogLevel() < log.DEBUG) {
       log.info('re-run with `--debug` for more information');

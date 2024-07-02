@@ -60,7 +60,7 @@ export async function execute(invocation: Invocation): Promise<number> {
       const prefix = problematic ? `${log.BOLD}${log.RED}` : '';
       const suffix = problematic ? log.RESET : '';
       stdout.write(
-        `${prefix}${relativePath} (index=${index}, worktree=${worktree})${suffix}\n`
+        `${prefix}${relativePath} (index=${index}, worktree=${worktree})${suffix}\n`,
       );
     } else {
       stdout.write(`${relativePath}\n`);

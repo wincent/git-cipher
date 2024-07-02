@@ -82,7 +82,7 @@ export async function execute(invocation: Invocation): Promise<number> {
     filename,
     salt,
     ciphertext,
-    authenticationKey
+    authenticationKey,
   );
   log.debug(`verifies? ${verifies}`);
 

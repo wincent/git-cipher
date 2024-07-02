@@ -54,7 +54,7 @@ export async function execute(invocation: Invocation): Promise<number> {
             version: PROTOCOL_VERSION,
           },
           null,
-          2
+          2,
         );
       } else {
         return null;
@@ -71,13 +71,13 @@ export async function execute(invocation: Invocation): Promise<number> {
     const encryptionKeySalt = await generateKeySalt();
     const encryptionKey = await deriveKey(
       encryptionPassphrase,
-      encryptionKeySalt
+      encryptionKeySalt,
     );
     const authenticationPassphrase = await generateRandomPassphrase();
     const authenticationKeySalt = await generateKeySalt();
     const authenticationKey = await deriveKey(
       authenticationPassphrase,
-      authenticationKeySalt
+      authenticationKeySalt,
     );
     const salt = await generateRandom();
 
@@ -90,7 +90,7 @@ export async function execute(invocation: Invocation): Promise<number> {
         version: PROTOCOL_VERSION,
       },
       null,
-      2
+      2,
     );
   }
 
@@ -99,7 +99,7 @@ export async function execute(invocation: Invocation): Promise<number> {
   assert(typeof passedRecipients === 'string');
   if (passedRecipients === defaultRecipients) {
     log.warn(
-      `using default --recipients value of ${defaultRecipients}; pass something else to override`
+      `using default --recipients value of ${defaultRecipients}; pass something else to override`,
     );
   }
   const recipients = optionsSchema['--recipients'].process(passedRecipients);
@@ -116,7 +116,7 @@ export async function execute(invocation: Invocation): Promise<number> {
     '--encrypt',
     {
       stdin: secrets,
-    }
+    },
   );
   if (!result.success) {
     log.error(describeResult(result));
@@ -132,7 +132,7 @@ export async function execute(invocation: Invocation): Promise<number> {
   } catch (error) {
     if (isErrnoException(error) && error.code === 'EEXIST') {
       log.warn(
-        `not writing ${publicSecretsPath} because it already exists; re-run with --force to overwrite`
+        `not writing ${publicSecretsPath} because it already exists; re-run with --force to overwrite`,
       );
     } else {
       log.error(`failed to write file ${publicSecretsPath}: ${error}`);
@@ -166,7 +166,7 @@ export async function execute(invocation: Invocation): Promise<number> {
       const contents = await readFile(preCommitPath, {encoding: 'utf8'});
       if (contents !== hookContents) {
         log.error(
-          `hook already exists at ${preCommitPath} with different contents; not overwriting`
+          `hook already exists at ${preCommitPath} with different contents; not overwriting`,
         );
         // TODO: offer to overwrite with --force
         return 0;
@@ -214,7 +214,7 @@ export const optionsSchema = {
         // TODO: validate that recipients look like a GPG user id
         (recipient) => {
           return ['--recipient', recipient];
-        }
+        },
       );
     },
   },

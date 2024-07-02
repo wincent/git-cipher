@@ -20,8 +20,8 @@ export async function execute(invocation: Invocation): Promise<number> {
   if (invocation.args.length !== 1) {
     log.error(
       `expected exactly one filename argument, got: ${invocation.args.join(
-        ' '
-      )}`
+        ' ',
+      )}`,
     );
     return 1;
   }
@@ -45,7 +45,7 @@ export async function execute(invocation: Invocation): Promise<number> {
   const secrets = await config.readPrivateSecrets();
   if (!secrets) {
     log.debug(
-      'cannot smudge without secrets; do you need to run `git-cipher unlock`?'
+      'cannot smudge without secrets; do you need to run `git-cipher unlock`?',
     );
     stdout.write(input);
     return 0;

@@ -34,7 +34,7 @@ export async function execute(invocation: Invocation): Promise<number> {
   const initialized = await config.isInitialized();
   if (!initialized) {
     log.error(
-      'repository is not properly initialized; have you run `git cipher init`?'
+      'repository is not properly initialized; have you run `git cipher init`?',
     );
     return 1;
   }
@@ -77,8 +77,8 @@ export async function execute(invocation: Invocation): Promise<number> {
     .map(
       (file) =>
         `${quotePath(
-          file
-        )}\tdiff=git-cipher\tfilter=git-cipher\tmerge=git-cipher\n`
+          file,
+        )}\tdiff=git-cipher\tfilter=git-cipher\tmerge=git-cipher\n`,
     )
     .join('');
 

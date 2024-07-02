@@ -28,7 +28,7 @@ export type RunOptions = {
 export default async function run(
   command: string,
   args: Array<string>,
-  options?: RunOptions
+  options?: RunOptions,
 ): Promise<Result> {
   return new Promise((resolve) => {
     const result: Result = {

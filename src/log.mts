@@ -90,7 +90,7 @@ export function print(...args: Array<any>) {
           return stringify(arg);
         }
       })
-      .join('')
+      .join(''),
   );
 }
 

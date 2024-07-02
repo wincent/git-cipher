@@ -29,7 +29,7 @@ import type {default as Config} from './Config.mjs';
  */
 export default async function resetManagedFiles(
   config: Config,
-  invocation: Invocation
+  invocation: Invocation,
 ): Promise<number> {
   const managedFiles = await config.managedFiles();
   if (!managedFiles) {
@@ -48,7 +48,7 @@ export default async function resetManagedFiles(
       log.notice('dirty worktree but resetting anyway due to --force');
     } else {
       log.error(
-        'aborting because of dirty worktree; to proceed anyway use --force'
+        'aborting because of dirty worktree; to proceed anyway use --force',
       );
       return 1;
     }
@@ -74,7 +74,7 @@ export default async function resetManagedFiles(
       '--force',
       'HEAD',
       '--',
-      ...managedFiles
+      ...managedFiles,
     );
     if (!result.success) {
       log.error(describeResult(result));

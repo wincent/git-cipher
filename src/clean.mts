@@ -26,7 +26,7 @@ import type {Secrets} from './Config.mjs';
 export default async function clean(
   input: Buffer,
   filename: string,
-  secrets: Secrets
+  secrets: Secrets,
 ): Promise<string> {
   const authenticationKey = Buffer.from(secrets.authenticationKey, 'hex');
   const encryptionKey = Buffer.from(secrets.encryptionKey, 'hex');

@@ -37,7 +37,7 @@ const KEY_SALT_SIZE = 64; // 64 bytes = 512 bits.
 export async function decrypt(
   contents: Buffer,
   key: Buffer,
-  iv: Buffer
+  iv: Buffer,
 ): Promise<Buffer> {
   return new Promise((resolve, _reject) => {
     const decipher = createDecipheriv(BLOCK_CIPHER_ALGORITHM, key, iv);
@@ -49,7 +49,7 @@ export async function decrypt(
 
 export async function deriveKey(
   passphrase: Buffer,
-  salt: Buffer
+  salt: Buffer,
 ): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     scrypt(passphrase, salt, BLOCK_CIPHER_KEY_SIZE, (error, buffer) => {
@@ -65,7 +65,7 @@ export async function deriveKey(
 export async function encrypt(
   contents: Buffer,
   key: Buffer,
-  iv: Buffer
+  iv: Buffer,
 ): Promise<Buffer> {
   return new Promise((resolve, _reject) => {
     const cipher = createCipheriv(BLOCK_CIPHER_ALGORITHM, key, iv);
@@ -113,7 +113,7 @@ function equal(a: Buffer, b: Buffer): boolean {
 export async function generateFileSalt(
   filename: string,
   contents: Buffer,
-  base: Buffer
+  base: Buffer,
 ): Promise<Buffer> {
   return new Promise(async (resolve, _reject) => {
     const secret = Buffer.concat([base, Buffer.from(filename)]);
@@ -139,7 +139,7 @@ export async function generateRandom(size: number = 32): Promise<Buffer> {
 }
 
 export async function generateRandomPassphrase(
-  size: number = 128
+  size: number = 128,
 ): Promise<Buffer> {
   return generateRandom(size);
 }
@@ -156,7 +156,7 @@ export async function mac(
   filename: string,
   iv: Buffer,
   ciphertext: Buffer,
-  key: Buffer
+  key: Buffer,
 ): Promise<Buffer> {
   return new Promise(async (resolve, _reject) => {
     const secret = Buffer.concat([key, Buffer.from(filename)]);
@@ -177,7 +177,7 @@ export async function verify(
   filename: string,
   iv: Buffer,
   ciphertext: Buffer,
-  key: Buffer
+  key: Buffer,
 ): Promise<boolean> {
   const actual = await mac(filename, iv, ciphertext, key);
   return equal(digest, actual);

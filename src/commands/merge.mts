@@ -35,7 +35,7 @@ export async function execute(invocation: Invocation): Promise<number> {
   const secrets = await config.readPrivateSecrets();
   if (!secrets) {
     log.error(
-      'git-cipher merge driver cannot operate without secrets; do you need to run `git-cipher unlock`?'
+      'git-cipher merge driver cannot operate without secrets; do you need to run `git-cipher unlock`?',
     );
     return 0;
   }
@@ -59,7 +59,7 @@ export async function execute(invocation: Invocation): Promise<number> {
     `--marker-size=${markerSize}`,
     ours,
     ancestor,
-    theirs
+    theirs,
   );
   if (!result.success) {
     // User will have to do manual merge.
@@ -74,7 +74,7 @@ export async function execute(invocation: Invocation): Promise<number> {
 async function encrypt(
   filename: string,
   secrets: Secrets,
-  pathname: string
+  pathname: string,
 ): Promise<void> {
   const input = await readFile(filename);
 
@@ -99,7 +99,7 @@ async function encrypt(
 async function decrypt(
   filename: string,
   secrets: Secrets,
-  pathname: string
+  pathname: string,
 ): Promise<void> {
   const input = await readFile(filename);
 

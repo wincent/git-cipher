@@ -15,7 +15,7 @@ const WRAP_WIDTH = 72;
  */
 export default function hex(
   buffer: Buffer | Uint8Array,
-  wrapWidth: number = WRAP_WIDTH
+  wrapWidth: number = WRAP_WIDTH,
 ): string {
   assert(Number.isInteger(wrapWidth));
   assert(wrapWidth >= 0);

@@ -55,7 +55,7 @@ export default class Config {
         const actual = result.stdout.toString().trim();
         if (actual !== expected) {
           errors.push(
-            `value for ${key} (${actual}) does not match expected (${expected})`
+            `value for ${key} (${actual}) does not match expected (${expected})`,
           );
         }
       }
@@ -80,7 +80,7 @@ export default class Config {
       '--decrypt',
       {
         stdin: file,
-      }
+      },
     );
     if (!result.success) {
       log.error(describeResult(result));
@@ -147,7 +147,7 @@ export default class Config {
     let result = await git(
       'update-index',
       '-q', // Don't error if index needs an update.
-      '--really-refresh' // Call `stat()` to see if merges/updates are needed.
+      '--really-refresh', // Call `stat()` to see if merges/updates are needed.
     );
     if (!result.success) {
       log.error(describeResult(result));
@@ -156,7 +156,7 @@ export default class Config {
     result = await git(
       'diff-index',
       '--quiet', // Don't want output, only exit code (1 = differences).
-      'HEAD'
+      'HEAD',
     );
     if (result.status === 1) {
       return true;
@@ -227,7 +227,7 @@ export default class Config {
       const topLevel = await this.topLevel();
       if (!topLevel) {
         log.error(
-          'unable to get managed files because could not determine top-level'
+          'unable to get managed files because could not determine top-level',
         );
         this._managedFiles = null;
       } else {
@@ -236,7 +236,7 @@ export default class Config {
           topLevel,
           'ls-files',
           '-z',
-          ':(attr:filter=git-cipher)'
+          ':(attr:filter=git-cipher)',
         );
         if (result.success) {
           this._managedFiles = [];
@@ -374,7 +374,7 @@ export default class Config {
       const topLevel = await this.topLevel();
       if (!topLevel) {
         log.error(
-          'unable to get untracked managed files because could not determine top-level'
+          'unable to get untracked managed files because could not determine top-level',
         );
         this._untrackedManagedFiles = null;
       } else {
@@ -384,7 +384,7 @@ export default class Config {
           'ls-files',
           '-z',
           '--others',
-          ':(attr:filter=git-cipher)'
+          ':(attr:filter=git-cipher)',
         );
         if (result.success) {
           this._untrackedManagedFiles = [];
@@ -412,7 +412,7 @@ export default class Config {
     await writeFile(
       privateSecretsPath,
       JSON.stringify(secrets, null, 2) + '\n',
-      {mode: 0o600}
+      {mode: 0o600},
     );
     await chmod(privateSecretsPath, 0o600);
   }

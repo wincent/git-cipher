@@ -7,13 +7,13 @@ import assert from 'node:assert';
 
 export function assertHasKey<
   O extends {[key: PropertyKey]: unknown},
-  K extends PropertyKey
+  K extends PropertyKey,
 >(object: O, key: K): asserts object is O & Record<K, unknown> {
   assert(hasKey(object, key));
 }
 
 export function assertIsObject(
-  value: unknown
+  value: unknown,
 ): asserts value is {[key: string]: unknown} {
   assert(typeof value === 'object');
   assert(value);
@@ -23,7 +23,7 @@ export function assertIsObject(
 // May not need this after: https://github.com/microsoft/TypeScript/issues/44253
 export function hasKey<
   O extends {[key: PropertyKey]: unknown},
-  K extends PropertyKey
+  K extends PropertyKey,
 >(object: O, key: K): object is O & Record<K, unknown> {
   return Object.hasOwn(object, key);
 }
@@ -34,7 +34,7 @@ export function hasKey<
  * `unknown`.
  */
 export function isErrnoException(
-  error: unknown
+  error: unknown,
 ): error is NodeJS.ErrnoException {
   if (!(error instanceof Error)) {
     return false;

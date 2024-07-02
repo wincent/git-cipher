@@ -65,7 +65,7 @@ export function wrapWithInset(text: string, inset: number): string {
     /([^\n]*)\n/g,
     (_, line) => {
       return line ? `${' '.repeat(inset)}${line}\n` : `${line}\n`;
-    }
+    },
   );
 }
 

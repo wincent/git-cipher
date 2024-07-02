@@ -39,7 +39,7 @@ export type OptionsSchema = {
 };
 
 export function assertOptionsSchema(
-  value: unknown
+  value: unknown,
 ): asserts value is OptionsSchema {
   assertIsObject(value);
 
@@ -59,7 +59,7 @@ export function assertOptionsSchema(
     if (hasKey(option, 'defaultValue')) {
       assert(
         typeof option.defaultValue === 'string' ||
-          typeof option.defaultValue === 'boolean'
+          typeof option.defaultValue === 'boolean',
       );
     }
 
@@ -102,7 +102,7 @@ export default async function parseOptions(
   schema: OptionsSchema,
   options?: {
     wrapGit: boolean;
-  }
+  },
 ): Promise<Options> {
   const errors = [];
   const input = invocation.options;
@@ -147,7 +147,7 @@ export default async function parseOptions(
           const placeholder = `<${name.replace(/-/g, '')}>`;
           if (schema.defaultValue) {
             log.printLine(
-              `  ${name}=${placeholder} (default: ${schema.defaultValue})`
+              `  ${name}=${placeholder} (default: ${schema.defaultValue})`,
             );
           } else {
             log.printLine(`  ${name}=${placeholder}`);
@@ -160,7 +160,7 @@ export default async function parseOptions(
       });
 
     log.printLine(
-      `\nRun \`${executable} help ${invocation.command}\` for subcommand documentation.`
+      `\nRun \`${executable} help ${invocation.command}\` for subcommand documentation.`,
     );
     log.printLine(`Run \`${executable} help\` for a list of subcommands.`);
 
@@ -194,7 +194,7 @@ export default async function parseOptions(
       !option.allowedValues.includes(value)
     ) {
       errors.push(
-        `option ${name} expects one of: ${option.allowedValues.join(', ')}`
+        `option ${name} expects one of: ${option.allowedValues.join(', ')}`,
       );
     }
   }

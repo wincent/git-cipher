@@ -11,7 +11,7 @@ import {spawnSync} from 'node:child_process';
  */
 export default async function wrapGit(
   command: string,
-  invocation: Invocation
+  invocation: Invocation,
 ): Promise<number> {
   const args: Array<string> = [];
 
@@ -19,7 +19,7 @@ export default async function wrapGit(
   const revealIndex = invocation.argv.indexOf('--reveal');
   const commandIndex = invocation.argv.indexOf(command);
   const textconvIndex = invocation.argv.findIndex((arg) =>
-    /^--(?:no-)?textconv$/.test(arg)
+    /^--(?:no-)?textconv$/.test(arg),
   );
   const verbatimIndex = invocation.argv.indexOf('--');
 

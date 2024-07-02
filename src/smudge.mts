@@ -23,7 +23,7 @@ export default async function smudge(
   input: Buffer,
   filename: string,
   secrets: Secrets,
-  options?: SmudgeOptions
+  options?: SmudgeOptions,
 ): Promise<Buffer> {
   const authenticationKey = Buffer.from(secrets.authenticationKey, 'hex');
   const encryptionKey = Buffer.from(secrets.encryptionKey, 'hex');
@@ -40,7 +40,7 @@ export default async function smudge(
   // temporary file.
   if (payload.filename !== filename && options?.checkFilename !== false) {
     log.warn(
-      `payload filename (${payload.filename}) does not match passed filename (${filename})`
+      `payload filename (${payload.filename}) does not match passed filename (${filename})`,
     );
   }
 
