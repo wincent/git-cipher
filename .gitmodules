@@ -1,3 +1,0 @@
-[submodule "n"]
-	path = vendor/n
-	url = https://github.com/tj/n.git

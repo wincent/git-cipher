@@ -110,11 +110,6 @@ log_warn() {
   fi
 }
 
-if [[ ! -x "$N_EXE" ]]; then
-  log_error "No executable at $N_EXE; did you forget to \`git submodule update\`?"
-  exit 1
-fi
-
 if [[ -z $("$N_EXE" which "$NODE_VERSION") ]]; then
   log_info "Installing NodeJS $NODE_VERSION"
   "$N_EXE" "$NODE_VERSION"
