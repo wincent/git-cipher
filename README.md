@@ -165,13 +165,3 @@ gpg --edit-key greg@hurrell.net # or $GPG_USER
 ## Author
 
 `git-cipher` was hacked together by Greg Hurrell (<greg@hurrell.net>).
-
-## Publishing releases
-
-```sh
-yarn format:check
-yarn version --prerelease # Or similar.
-yarn compile
-git push --follow-tags origin next
-yarn publish
-```
