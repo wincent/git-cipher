@@ -4,7 +4,7 @@
 
 git-cipher is a tool for encrypting sensitive files for storage in a public Git repo.
 
-> :warning: This documentation refers to version 2.0 of git-cipher, which is a NodeJS package and a complete rewrite from version 1.0, which was a Ruby script and used a different encryption protocol.
+> :warning: This documentation refers to version 2.0 of git-cipher, which is a Node.js package and a complete rewrite from version 1.0, which was a Ruby script and used a different encryption protocol.
 >
 > For differences between version 1.0 and 2.0, please see [UPGRADING](UPGRADING.md). For more on version 1.0, please see [the `1-x-release` branch](https://github.com/wincent/git-cipher/tree/1-x-release).
 
@@ -50,10 +50,29 @@ Files are added to the list of managed files with `git-cipher add`. These are ad
 
 **Note:** If you install the `git-cipher` executable somewhere in your `$PATH`, Git will treat it as a subcommand, which means you can invoke it as `git cipher`. Otherwise, you will have to provide the full path to the `git-cipher` executable.
 
+### Installing the external prerequisites (Git, GnuPG)
+
 To install the external prerequisites, use your preferred method. For example, on macOS you might choose to use [Homebrew](http://brew.sh/):
 
 ```sh
 brew install git gnupg gpg-agent
+```
+
+### Installing `git-cipher` globally
+
+```
+npm install -g git-cipher
+```
+
+**NOTE:** `git-cipher` has no runtime npm dependencies (it does have `devDependencies`, however).
+
+### Installing `git-cipher` as a submodule inside another Git repository
+
+If you install the git-cipher repo as a submodule inside another Git repository, you can use the included `bin/git-cipher` wrapper script to invoke the copy of `git-cipher` contained in the submodule. For an example of this, see [my dotfiles repo](https://github.com/wincent/wincent), which embeds `git-cipher` under [the `vendor/` directory](https://github.com/wincent/wincent/tree/main/vendor). You could add a submodule like this as follows:
+
+```
+mkdir -p vendor
+git submodule add --name git-cipher https://github.com/wincent/git-cipher vendor/git-cipher
 ```
 
 ## Configuration
