@@ -208,7 +208,6 @@ When you search for Git encryption, and specifically the use of "clean"/"smudge"
 ## "Transparently encrypt repository contents with GPG" (2009-03-12)
 
 ```
-
 Hi,
 
 I'm new to Git but I really already love it. ;-)

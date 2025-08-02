@@ -64,8 +64,8 @@ export default async function run(
     //
     // See: https://nodejs.org/api/child_process.html#event-close
     child.on('close', () => {
-      result.success =
-        result.error === null && result.signal === null && result.status === 0;
+      result.success = result.error === null && result.signal === null &&
+        result.status === 0;
       resolve(result);
     });
 

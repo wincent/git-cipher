@@ -8,7 +8,7 @@ import {chmod, mkdir, readFile, rm, writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {env} from 'node:process';
 
-import {isErrnoException, assertHasKey, assertIsObject} from './assert.mts';
+import {assertHasKey, assertIsObject, isErrnoException} from './assert.mts';
 import git from './git.mts';
 import gpg from './gpg.mts';
 import * as log from './log.mts';
@@ -138,7 +138,8 @@ export default class Config {
       'filter.git-cipher.clean': `${tool} clean %f`,
       'filter.git-cipher.smudge': `${tool} smudge %f`,
       'merge.git-cipher.driver': `${tool} merge %O %A %B %L %P`,
-      'merge.git-cipher.name': `git-cipher merge driver for merging encrypted files`,
+      'merge.git-cipher.name':
+        `git-cipher merge driver for merging encrypted files`,
       'merge.renormalize': 'true',
     };
   }

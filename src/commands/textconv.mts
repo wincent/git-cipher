@@ -21,9 +21,11 @@ export const documentation = await markdown('git-cipher-textconv');
 export async function execute(invocation: Invocation): Promise<number> {
   if (invocation.args.length !== 1) {
     log.error(
-      `expected exactly one filename argument, got: ${invocation.args.join(
-        ' ',
-      )}`,
+      `expected exactly one filename argument, got: ${
+        invocation.args.join(
+          ' ',
+        )
+      }`,
     );
     return 1;
   }

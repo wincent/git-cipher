@@ -19,15 +19,13 @@ export default async function wrapGit(
   const revealIndex = invocation.argv.indexOf('--reveal');
   const commandIndex = invocation.argv.indexOf(command);
   const textconvIndex = invocation.argv.findIndex((arg) =>
-    /^--(?:no-)?textconv$/.test(arg),
+    /^--(?:no-)?textconv$/.test(arg)
   );
   const verbatimIndex = invocation.argv.indexOf('--');
 
-  const shouldReveal =
-    revealIndex !== -1 &&
+  const shouldReveal = revealIndex !== -1 &&
     (verbatimIndex === -1 ? true : revealIndex < verbatimIndex);
-  const shouldTextconv =
-    (shouldReveal && textconvIndex === -1) ||
+  const shouldTextconv = (shouldReveal && textconvIndex === -1) ||
     (verbatimIndex === -1 ? false : textconvIndex > verbatimIndex);
 
   for (let i = 0; i < invocation.argv.length; i++) {
@@ -60,7 +58,8 @@ export function revealSchema() {
     '--reveal': {
       defaultValue: false,
       kind: 'switch',
-      description: `show raw ciphertext as it is literally stored in Git's object storage`,
+      description:
+        `show raw ciphertext as it is literally stored in Git's object storage`,
     },
   } as const;
 }

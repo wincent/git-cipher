@@ -76,9 +76,11 @@ export async function execute(invocation: Invocation): Promise<number> {
   const output = filesToAdd
     .map(
       (file) =>
-        `${quotePath(
-          file,
-        )}\tdiff=git-cipher\tfilter=git-cipher\tmerge=git-cipher\n`,
+        `${
+          quotePath(
+            file,
+          )
+        }\tdiff=git-cipher\tfilter=git-cipher\tmerge=git-cipher\n`,
     )
     .join('');
 

@@ -8,7 +8,7 @@ import {readFile} from 'node:fs/promises';
 import {join} from 'node:path';
 
 import Scanner from './Scanner.mts';
-import {assertIsObject, assertHasKey} from './assert.mts';
+import {assertHasKey, assertIsObject} from './assert.mts';
 import {docs} from './paths.mts';
 import {wrapWithInset} from './wrap.mts';
 
@@ -146,7 +146,7 @@ function formatList(text: string, inset: number = 0): string {
         return i
           ? `${line}\n`
           : line.replace(' '.repeat(inset + 2), ' '.repeat(inset) + '- ') +
-              '\n';
+            '\n';
       })
       .join('');
   });

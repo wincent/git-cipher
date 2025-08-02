@@ -13,16 +13,16 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^24.1.0",
+    "dprint": "^0.50.1",
     "esbuild": "^0.25.8",
-    "prettier": "^3.6.2",
     "typescript": "5.9.2"
   },
   "scripts": {
     "build": "esbuild src/main.mts --bundle --format=esm --platform=node --sourcemap --outfile=lib/main.mjs",
     "clean": "rm -r lib/*",
     "compile": "tsc --noEmit",
-    "format:check": "prettier --check \"**/*.{md,mts}\" \"*.{md,json}\"",
-    "format": "prettier --write \"**/*.{md,mts}\" \"*.{md,json}\""
+    "format:check": "dprint check",
+    "format": "dprint fmt"
   },
   "type": "module",
   "engines": {

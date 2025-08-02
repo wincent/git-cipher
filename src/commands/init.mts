@@ -4,7 +4,7 @@
  */
 
 import assert from 'node:assert';
-import {chmod, open, mkdir, readFile} from 'node:fs/promises';
+import {chmod, mkdir, open, readFile} from 'node:fs/promises';
 import {join} from 'node:path';
 
 import Config from '../Config.mts';

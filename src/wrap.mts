@@ -37,8 +37,8 @@ export default function wrap(text: string, width: number = 72): string {
         break;
       }
       const next = memo[end] || {end: words.length, penalty: 0};
-      const penalty =
-        (end === words.length ? 0 : Math.pow(width - length, 2)) + next.penalty;
+      const penalty = (end === words.length ? 0 : Math.pow(width - length, 2)) +
+        next.penalty;
       if (memo[start]?.penalty ?? Infinity > penalty) {
         memo[start] = {end, penalty};
       }
@@ -46,7 +46,7 @@ export default function wrap(text: string, width: number = 72): string {
   }
 
   let output = '';
-  for (let i = 0; i < words.length; ) {
+  for (let i = 0; i < words.length;) {
     const line = memo[i];
     assert(line);
     while (i < line.end) {
