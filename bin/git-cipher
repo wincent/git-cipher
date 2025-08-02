@@ -113,5 +113,4 @@ else
   "$ROOT/bin/yarn" run tsc --noEmit
 fi
 
-set -x
 exec env __DEV__=1 "$ROOT/bin/node" "$MAIN" "$@"
