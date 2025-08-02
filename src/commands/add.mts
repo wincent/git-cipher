@@ -6,12 +6,12 @@
 import {open} from 'node:fs/promises';
 import {join, relative, resolve} from 'node:path';
 
-import Config from '../Config.mjs';
-import commonOptions from '../commonOptions.mjs';
-import git from '../git.mjs';
-import * as log from '../log.mjs';
-import markdown from '../markdown.mjs';
-import {describeResult} from '../run.mjs';
+import Config from '../Config.mts';
+import commonOptions from '../commonOptions.mts';
+import git from '../git.mts';
+import * as log from '../log.mts';
+import markdown from '../markdown.mts';
+import {describeResult} from '../run.mts';
 
 export const description = 'adds file(s) to set of encrypted files';
 

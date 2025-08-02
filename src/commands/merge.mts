@@ -5,15 +5,15 @@
 
 import {readFile, writeFile} from 'node:fs/promises';
 
-import Config from '../Config.mjs';
-import clean, {isEncrypted} from '../clean.mjs';
-import commonOptions from '../commonOptions.mjs';
-import git from '../git.mjs';
-import * as log from '../log.mjs';
-import markdown from '../markdown.mjs';
-import smudge from '../smudge.mjs';
+import Config from '../Config.mts';
+import clean, {isEncrypted} from '../clean.mts';
+import commonOptions from '../commonOptions.mts';
+import git from '../git.mts';
+import * as log from '../log.mts';
+import markdown from '../markdown.mts';
+import smudge from '../smudge.mts';
 
-import type {Secrets} from '../Config.mjs';
+import type {Secrets} from '../Config.mts';
 
 export const description = 'merge driver for encrypted files';
 

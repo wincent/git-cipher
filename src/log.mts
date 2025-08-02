@@ -5,7 +5,7 @@
 
 import {stderr} from 'node:process';
 
-import stringify from './stringify.mjs';
+import stringify from './stringify.mts';
 
 /**
  * https://en.wikipedia.org/wiki/ANSI_escape_code#Colors

@@ -7,11 +7,11 @@ import assert from 'node:assert';
 import {join} from 'node:path';
 import {argv} from 'node:process';
 
-import ExitStatus from './ExitStatus.mjs';
-import {assertIsObject, hasKey} from './assert.mjs';
-import * as log from './log.mjs';
-import {commands} from './paths.mjs';
-import {wrapWithInset} from './wrap.mjs';
+import ExitStatus from './ExitStatus.mts';
+import {assertIsObject, hasKey} from './assert.mts';
+import * as log from './log.mts';
+import {commands} from './paths.mts';
+import {wrapWithInset} from './wrap.mts';
 
 type Options = {
   [option: string]: string | boolean;
@@ -85,7 +85,7 @@ function executableName(): string {
     // `argv` will resemble:
     //
     // - '/some/absolute/path/to/repo/vendor/node/n/versions/node/22.18.0/bin/node'
-    // - '/some/absolute/path/to/repo/lib/main.mjs'
+    // - '/some/absolute/path/to/repo/lib/main.mts'
     return 'git-cipher';
   } else {
     // Probably installed globally in `$PATH`.
@@ -122,7 +122,7 @@ export default async function parseOptions(
     try {
       // Safe because `invocation.command` is always an existing command name.
       const {description} = await import(
-        join(commands, `${invocation.command}.mjs`)
+        join(commands, `${invocation.command}.mts`)
       );
       assert(typeof description === 'string');
       log.printLine(wrapWithInset(description, 2));

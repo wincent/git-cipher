@@ -7,7 +7,7 @@
 
 import {readFile} from 'node:fs/promises';
 
-import commonOptions from '../commonOptions.mjs';
+import commonOptions from '../commonOptions.mts';
 import {
   BLOCK_CIPHER_ALGORITHM,
   PROTOCOL_URL,
@@ -21,11 +21,11 @@ import {
   generateRandomPassphrase,
   mac,
   verify,
-} from '../crypto.mjs';
-import git from '../git.mjs';
-import hex from '../hex.mjs';
-import * as log from '../log.mjs';
-import markdown from '../markdown.mjs';
+} from '../crypto.mts';
+import git from '../git.mts';
+import hex from '../hex.mts';
+import * as log from '../log.mts';
+import markdown from '../markdown.mts';
 
 export const description =
   'shows cryptographic primitives operating on sample data';

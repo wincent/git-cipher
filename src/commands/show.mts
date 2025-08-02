@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-import markdown from '../markdown.mjs';
-import wrapGit, {revealSchema} from '../wrapGit.mjs';
+import markdown from '../markdown.mts';
+import wrapGit, {revealSchema} from '../wrapGit.mts';
 
 export const description = 'cipher-aware wrapper around `git show`';
 

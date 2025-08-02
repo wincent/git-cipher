@@ -6,11 +6,11 @@
 import {rm} from 'node:fs/promises';
 import {join} from 'node:path';
 
-import git from './git.mjs';
-import * as log from './log.mjs';
-import {describeResult} from './run.mjs';
+import git from './git.mts';
+import * as log from './log.mts';
+import {describeResult} from './run.mts';
 
-import type {default as Config} from './Config.mjs';
+import type {default as Config} from './Config.mts';
 
 /**
  * Common to both `git-cipher lock` and `git-cipher unlock`, this function

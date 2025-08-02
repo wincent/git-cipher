@@ -6,7 +6,7 @@
 import {Buffer} from 'node:buffer';
 import {spawn} from 'node:child_process';
 
-import shellEscape from './shellEscape.mjs';
+import shellEscape from './shellEscape.mts';
 
 export type Result = {
   command: string;

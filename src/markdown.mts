@@ -7,10 +7,10 @@ import assert from 'node:assert';
 import {readFile} from 'node:fs/promises';
 import {join} from 'node:path';
 
-import Scanner from './Scanner.mjs';
-import {assertIsObject, assertHasKey} from './assert.mjs';
-import {docs} from './paths.mjs';
-import {wrapWithInset} from './wrap.mjs';
+import Scanner from './Scanner.mts';
+import {assertIsObject, assertHasKey} from './assert.mts';
+import {docs} from './paths.mts';
+import {wrapWithInset} from './wrap.mts';
 
 type Option = {
   name: string;

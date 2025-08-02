@@ -10,7 +10,7 @@ import assert from 'node:assert';
 import {readFile} from 'node:fs/promises';
 import {join} from 'node:path';
 
-import {root} from './paths.mjs';
+import {root} from './paths.mts';
 
 const packageJSON = await readFile(join(root, 'package.json'), 'utf8');
 const VERSION = JSON.parse(packageJSON).version;

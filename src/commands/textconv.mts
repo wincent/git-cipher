@@ -7,12 +7,12 @@ import {Buffer} from 'node:buffer';
 import {readFile} from 'node:fs/promises';
 import {stdout} from 'node:process';
 
-import Config from '../Config.mjs';
-import commonOptions from '../commonOptions.mjs';
-import {decrypt, verify} from '../crypto.mjs';
-import * as log from '../log.mjs';
-import markdown from '../markdown.mjs';
-import parse from '../parse.mjs';
+import Config from '../Config.mts';
+import commonOptions from '../commonOptions.mts';
+import {decrypt, verify} from '../crypto.mts';
+import * as log from '../log.mts';
+import markdown from '../markdown.mts';
+import parse from '../parse.mts';
 
 export const description = 'decrypts file contents for display in `git diff`';
 

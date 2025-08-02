@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-import {LAQUO, RAQUO} from './Unicode.mjs';
-import hex from './hex.mjs';
+import {LAQUO, RAQUO} from './Unicode.mts';
+import hex from './hex.mts';
 
 const CIRCULAR = `${LAQUO}circular${RAQUO}`;
 

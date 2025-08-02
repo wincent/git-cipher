@@ -3,11 +3,11 @@
  * SPDX-License-Identifier: MIT
  */
 
-import Config from '../Config.mjs';
-import commonOptions from '../commonOptions.mjs';
-import markdown from '../markdown.mjs';
-import removeCachedPlaintext from '../removeCachedPlaintext.mjs';
-import resetManagedFiles from '../resetManagedFiles.mjs';
+import Config from '../Config.mts';
+import commonOptions from '../commonOptions.mts';
+import markdown from '../markdown.mts';
+import removeCachedPlaintext from '../removeCachedPlaintext.mts';
+import resetManagedFiles from '../resetManagedFiles.mts';
 
 export const description =
   'locks the current repositry, replacing decrypted files with ciphertext';

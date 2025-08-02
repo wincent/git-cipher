@@ -3,15 +3,15 @@
  * SPDX-License-Identifier: MIT
  */
 
-import Config from '../Config.mjs';
-import commonOptions from '../commonOptions.mjs';
-import dedent from '../dedent.mjs';
-import git from '../git.mjs';
-import * as log from '../log.mjs';
-import markdown from '../markdown.mjs';
-import parse from '../parse.mjs';
-import {describeResult} from '../run.mjs';
-import shellEscape from '../shellEscape.mjs';
+import Config from '../Config.mts';
+import commonOptions from '../commonOptions.mts';
+import dedent from '../dedent.mts';
+import git from '../git.mts';
+import * as log from '../log.mts';
+import markdown from '../markdown.mts';
+import parse from '../parse.mts';
+import {describeResult} from '../run.mts';
+import shellEscape from '../shellEscape.mts';
 
 export const description = 'Git pre-commit hook to detect encryption problems';
 

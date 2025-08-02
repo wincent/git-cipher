@@ -7,9 +7,9 @@ import assert from 'node:assert';
 import {chmod, open, mkdir, readFile} from 'node:fs/promises';
 import {join} from 'node:path';
 
-import Config from '../Config.mjs';
-import {isErrnoException} from '../assert.mjs';
-import commonOptions from '../commonOptions.mjs';
+import Config from '../Config.mts';
+import {isErrnoException} from '../assert.mts';
+import commonOptions from '../commonOptions.mts';
 import {
   PROTOCOL_URL,
   PROTOCOL_VERSION,
@@ -17,13 +17,13 @@ import {
   generateKeySalt,
   generateRandom,
   generateRandomPassphrase,
-} from '../crypto.mjs';
-import dedent from '../dedent.mjs';
-import gpg from '../gpg.mjs';
-import hex from '../hex.mjs';
-import * as log from '../log.mjs';
-import markdown from '../markdown.mjs';
-import {describeResult} from '../run.mjs';
+} from '../crypto.mts';
+import dedent from '../dedent.mts';
+import gpg from '../gpg.mts';
+import hex from '../hex.mts';
+import * as log from '../log.mts';
+import markdown from '../markdown.mts';
+import {describeResult} from '../run.mts';
 
 export const description = 'prepares a repository to work with git-cipher';
 

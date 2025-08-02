@@ -13,7 +13,7 @@ const {
   scrypt,
 } = await import('node:crypto');
 
-import {VERSION} from './version.mjs';
+import {VERSION} from './version.mts';
 
 const randomFill = promisify(randomFillAsync);
 

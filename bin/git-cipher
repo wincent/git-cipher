@@ -27,19 +27,10 @@ ROOT="$DIRECTORY/.."
 
 NODE_VERSION=22.18.0
 VENDOR="$ROOT/vendor"
-MAIN="$ROOT/lib/main.mjs"
+MAIN="$ROOT/src/main.mts"
 N_EXE="$VENDOR/n/bin/n"
 export N_PREFIX="$VENDOR/node"
-YARN_EXE="$VENDOR/yarn/bin/yarn"
 YARN_INTEGRITY="$ROOT/node_modules/.yarn-integrity"
-
-node() {
-  "$N_EXE" exec "$NODE_VERSION" "$@"
-}
-
-yarn() {
-  node "$YARN_EXE" --cwd "$ROOT" "$@"
-}
 
 # ANSI color codes.
 # https://stackoverflow.com/a/5947802/2103996
@@ -69,9 +60,7 @@ LOG_LEVEL=$LOG_LEVEL_INFO
 
 for VAR in "$@"
 do
-  if [[ $VAR = "--build" || $VAR = "-b" ]]; then
-    BUILD=1
-  elif [[ $VAR = "--debug" ]]; then
+  if [[ $VAR = "--debug" ]]; then
     LOG_LEVEL=$LOG_LEVEL_DEBUG
     DEBUG=1
   elif [[ $VAR = "--quiet" || $VAR = "-q" ]]; then
@@ -118,19 +107,11 @@ else
 fi
 
 if [ ! -e "$YARN_INTEGRITY" ]; then
-  log_error "No artifact at $YARN_INTEGRITY; did you forget to \`yarn\`? (running now)"
-  yarn > /dev/null
+  log_error "No artifact at $YARN_INTEGRITY; did you forget to \`yarn\`? (skipping type-checking)"
+else
+  log_info "Checking types"
+  "$ROOT/bin/yarn" run tsc --noEmit
 fi
 
-# TODO: properly detect up-to-date-ness of build, as opposed to just existence
-if [ ! -e "$MAIN" ]; then
-  log_error "No build artifact at $MAIN; did you forget to \`yarn run tsc\`? (running now)"
-  yarn run tsc > /dev/null
-fi
-
-if [[ $BUILD -eq 1 ]]; then
-  log_info "Running \`tsc\`"
-  yarn run tsc
-fi
-
-exec env __DEV__=1 "$N_EXE" run "$NODE_VERSION" "$MAIN" "$@"
+set -x
+exec env __DEV__=1 "$ROOT/bin/node" "$MAIN" "$@"

@@ -12,10 +12,10 @@ import {
   encrypt,
   generateFileSalt,
   mac,
-} from './crypto.mjs';
-import hex from './hex.mjs';
+} from './crypto.mts';
+import hex from './hex.mts';
 
-import type {Secrets} from './Config.mjs';
+import type {Secrets} from './Config.mts';
 
 /**
  * Core of the "clean" (ie. encryption) process.

@@ -5,9 +5,9 @@
 
 import assert from 'node:assert';
 
-import run from './run.mjs';
+import run from './run.mts';
 
-import type {Result, RunOptions} from './run.mjs';
+import type {Result, RunOptions} from './run.mts';
 
 /**
  * Convenience wrapper that runs `gpg`. The last element in `args` may be a

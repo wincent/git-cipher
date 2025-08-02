@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: MIT
  */
 
-import git from './git.mjs';
-import * as log from './log.mjs';
-import {describeResult} from './run.mjs';
+import git from './git.mts';
+import * as log from './log.mts';
+import {describeResult} from './run.mts';
 
 export default async function removeCachedPlaintext(): Promise<void> {
   let result = await git('update-ref', '-d', 'refs/notes/textconv/git-cipher');

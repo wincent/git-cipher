@@ -7,18 +7,18 @@
     "lib"
   ],
   "description": "Manages encrypted content in a Git repo",
-  "main": "./lib/main.js",
+  "main": "./lib/main.mjs",
   "repository": "https://github.com/wincent/git-cipher",
   "author": "Greg Hurrell <greg@hurrell.net>",
   "license": "MIT",
   "private": false,
   "devDependencies": {
-    "@types/node": "18.6.3",
-    "typescript": "4.7.4"
+    "@types/node": "*",
+    "typescript": "*"
   },
   "scripts": {
     "clean": "rm -r lib/*",
-    "compile": "yarn run tsc",
+    "compile": "bin/yarn run tsc",
     "format:check": "npx -y prettier --check \"**/*.{md,mts}\" \"*.{md,json}\"",
     "format": "npx -y prettier --write \"**/*.{md,mts}\" \"*.{md,json}\""
   },

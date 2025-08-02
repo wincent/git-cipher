@@ -8,13 +8,13 @@ import {chmod, mkdir, readFile, rm, writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {env} from 'node:process';
 
-import {isErrnoException, assertHasKey, assertIsObject} from './assert.mjs';
-import git from './git.mjs';
-import gpg from './gpg.mjs';
-import * as log from './log.mjs';
-import {bin} from './paths.mjs';
-import {describeResult} from './run.mjs';
-import shellEscape from './shellEscape.mjs';
+import {isErrnoException, assertHasKey, assertIsObject} from './assert.mts';
+import git from './git.mts';
+import gpg from './gpg.mts';
+import * as log from './log.mts';
+import {bin} from './paths.mts';
+import {describeResult} from './run.mts';
+import shellEscape from './shellEscape.mts';
 
 export type Secrets = {
   authenticationKey: string;

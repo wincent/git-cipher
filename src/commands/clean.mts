@@ -6,11 +6,11 @@
 import {Buffer} from 'node:buffer';
 import {stdin, stdout} from 'node:process';
 
-import Config from '../Config.mjs';
-import clean, {isEncrypted} from '../clean.mjs';
-import commonOptions from '../commonOptions.mjs';
-import * as log from '../log.mjs';
-import markdown from '../markdown.mjs';
+import Config from '../Config.mts';
+import clean, {isEncrypted} from '../clean.mts';
+import commonOptions from '../commonOptions.mts';
+import * as log from '../log.mts';
+import markdown from '../markdown.mts';
 
 export const description = 'encrypts file contents (Git filter)';
 

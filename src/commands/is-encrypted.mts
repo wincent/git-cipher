@@ -6,11 +6,11 @@
 import {readFile} from 'node:fs/promises';
 import {stdout} from 'node:process';
 
-import {isErrnoException} from '../assert.mjs';
-import {isEncrypted} from '../clean.mjs';
-import commonOptions from '../commonOptions.mjs';
-import * as log from '../log.mjs';
-import markdown from '../markdown.mjs';
+import {isErrnoException} from '../assert.mts';
+import {isEncrypted} from '../clean.mts';
+import commonOptions from '../commonOptions.mts';
+import * as log from '../log.mts';
+import markdown from '../markdown.mts';
 
 export const description = 'reports whether a file is encrypted';
 

@@ -6,12 +6,12 @@
 import assert from 'node:assert';
 import {chmod} from 'node:fs/promises';
 
-import Config from '../Config.mjs';
-import commonOptions from '../commonOptions.mjs';
-import * as log from '../log.mjs';
-import markdown from '../markdown.mjs';
-import removeCachedPlaintext from '../removeCachedPlaintext.mjs';
-import resetManagedFiles from '../resetManagedFiles.mjs';
+import Config from '../Config.mts';
+import commonOptions from '../commonOptions.mts';
+import * as log from '../log.mts';
+import markdown from '../markdown.mts';
+import removeCachedPlaintext from '../removeCachedPlaintext.mts';
+import resetManagedFiles from '../resetManagedFiles.mts';
 
 export const description =
   'unlocks the current repository, decrypting its secrets';

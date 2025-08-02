@@ -7,10 +7,10 @@ import assert from 'node:assert';
 import {readdir} from 'node:fs/promises';
 import {extname, join} from 'node:path';
 
-import commonOptions from '../commonOptions.mjs';
-import * as log from '../log.mjs';
-import markdown, {assertMarkdown} from '../markdown.mjs';
-import {assertOptionsSchema} from '../parseOptions.mjs';
+import commonOptions from '../commonOptions.mts';
+import * as log from '../log.mts';
+import markdown, {assertMarkdown} from '../markdown.mts';
+import {assertOptionsSchema} from '../parseOptions.mts';
 
 const COMMANDISH = /^\w+(?:-\w+)*$/;
 
@@ -19,7 +19,7 @@ export const description = 'prints usage information';
 export const documentation = await markdown('git-cipher-help');
 
 export async function execute(invocation: Invocation): Promise<number> {
-  const {commands: directory} = await import('../paths.mjs');
+  const {commands: directory} = await import('../paths.mts');
 
   if (invocation.args.length) {
     if (invocation.args.length > 1) {
@@ -29,7 +29,7 @@ export async function execute(invocation: Invocation): Promise<number> {
     assert(command);
     if (COMMANDISH.test(command)) {
       try {
-        const file = command + '.mjs';
+        const file = command + '.mts';
         const {description, documentation, optionsSchema} = await import(
           join(directory, file)
         );
@@ -63,7 +63,7 @@ export async function execute(invocation: Invocation): Promise<number> {
   const commands: {[name: string]: string} = {};
   log.printLine('Available subcommands:\n');
   for (const file of await readdir(directory)) {
-    if (extname(file) === '.mjs') {
+    if (extname(file) === '.mts') {
       try {
         const {description} = await import(join(directory, file));
         assert(typeof description === 'string');

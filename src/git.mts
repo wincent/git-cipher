@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: MIT
  */
 
-import run from './run.mjs';
+import run from './run.mts';
 
-import type {Result} from './run.mjs';
+import type {Result} from './run.mts';
 
 export default function git(...args: Array<string>): Promise<Result> {
   return run('git', args);

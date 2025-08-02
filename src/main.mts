@@ -6,13 +6,11 @@
  */
 
 import assert from 'node:assert';
-import {argv, env, exit} from 'node:process';
+import {argv, exit} from 'node:process';
 
-import ExitStatus from './ExitStatus.mjs';
-import * as log from './log.mjs';
-import parseOptions from './parseOptions.mjs';
-
-const __DEV__ = !!env['__DEV__'];
+import ExitStatus from './ExitStatus.mts';
+import * as log from './log.mts';
+import parseOptions from './parseOptions.mts';
 
 const invocation: Invocation = {
   options: {},
@@ -25,7 +23,7 @@ const SEPARATOR = '--';
 const LONG_SWITCH = /^--(?:no-)?(?:[a-z]+-)*(?:[a-z]+)$/;
 const LONG_OPTION = /^--(?:[a-z]+-)*(?:[a-z]+)=.+$/;
 
-// Skip `node` executable + the `main.mjs` script.
+// Skip `node` executable + the `main.mts` script.
 for (let i = 2; i < argv.length; i++) {
   const arg = argv[i];
   assert(arg);
@@ -82,13 +80,6 @@ if (invocation.options['--debug']) {
 }
 
 // TODO: based on subcommand, parse/validate options/args
-// eg. --build should be ignored but only in dev
-if (invocation.options['--build'] === true && __DEV__) {
-  // Ignoring build flag, which should only be passed in __DEV__
-  // (ie. from a local clone).
-  delete invocation.options['--build'];
-}
-
 let status = 1;
 
 try {
@@ -96,75 +87,75 @@ try {
   // DRY-ing them up) - will lose type information unless i take steps
   // See: https://github.com/microsoft/TypeScript/issues/32401
   if (invocation.command === 'add') {
-    const {execute, optionsSchema} = await import('./commands/add.mjs');
+    const {execute, optionsSchema} = await import('./commands/add.mts');
     invocation.options = await parseOptions(invocation, optionsSchema);
     status = await execute(invocation);
   } else if (invocation.command === 'clean') {
-    const {execute, optionsSchema} = await import('./commands/clean.mjs');
+    const {execute, optionsSchema} = await import('./commands/clean.mts');
     invocation.options = await parseOptions(invocation, optionsSchema);
     status = await execute(invocation);
   } else if (invocation.command === 'demo') {
-    const {execute, optionsSchema} = await import('./commands/demo.mjs');
+    const {execute, optionsSchema} = await import('./commands/demo.mts');
     invocation.options = await parseOptions(invocation, optionsSchema);
     status = await execute(invocation);
   } else if (invocation.command === 'diff') {
-    const {execute, optionsSchema} = await import('./commands/diff.mjs');
+    const {execute, optionsSchema} = await import('./commands/diff.mts');
     invocation.options = await parseOptions(invocation, optionsSchema, {
       wrapGit: true,
     });
     status = await execute(invocation);
   } else if (invocation.command === 'help') {
-    const {execute, optionsSchema} = await import('./commands/help.mjs');
+    const {execute, optionsSchema} = await import('./commands/help.mts');
     invocation.options = await parseOptions(invocation, optionsSchema);
     status = await execute(invocation);
   } else if (invocation.command === 'hook') {
-    const {execute, optionsSchema} = await import('./commands/hook.mjs');
+    const {execute, optionsSchema} = await import('./commands/hook.mts');
     invocation.options = await parseOptions(invocation, optionsSchema);
     status = await execute(invocation);
   } else if (invocation.command === 'init') {
-    const {execute, optionsSchema} = await import('./commands/init.mjs');
+    const {execute, optionsSchema} = await import('./commands/init.mts');
     invocation.options = await parseOptions(invocation, optionsSchema);
     status = await execute(invocation);
   } else if (invocation.command === 'is-encrypted') {
     const {execute, optionsSchema} = await import(
-      './commands/is-encrypted.mjs'
+      './commands/is-encrypted.mts'
     );
     invocation.options = await parseOptions(invocation, optionsSchema);
     status = await execute(invocation);
   } else if (invocation.command === 'lock') {
-    const {execute, optionsSchema} = await import('./commands/lock.mjs');
+    const {execute, optionsSchema} = await import('./commands/lock.mts');
     invocation.options = await parseOptions(invocation, optionsSchema);
     status = await execute(invocation);
   } else if (invocation.command === 'log') {
-    const {execute, optionsSchema} = await import('./commands/log.mjs');
+    const {execute, optionsSchema} = await import('./commands/log.mts');
     invocation.options = await parseOptions(invocation, optionsSchema, {
       wrapGit: true,
     });
     status = await execute(invocation);
   } else if (invocation.command === 'ls') {
-    const {execute, optionsSchema} = await import('./commands/ls.mjs');
+    const {execute, optionsSchema} = await import('./commands/ls.mts');
     invocation.options = await parseOptions(invocation, optionsSchema);
     status = await execute(invocation);
   } else if (invocation.command === 'merge') {
-    const {execute, optionsSchema} = await import('./commands/merge.mjs');
+    const {execute, optionsSchema} = await import('./commands/merge.mts');
     invocation.options = await parseOptions(invocation, optionsSchema);
     status = await execute(invocation);
   } else if (invocation.command === 'show') {
-    const {execute, optionsSchema} = await import('./commands/show.mjs');
+    const {execute, optionsSchema} = await import('./commands/show.mts');
     invocation.options = await parseOptions(invocation, optionsSchema, {
       wrapGit: true,
     });
     status = await execute(invocation);
   } else if (invocation.command === 'smudge') {
-    const {execute, optionsSchema} = await import('./commands/smudge.mjs');
+    const {execute, optionsSchema} = await import('./commands/smudge.mts');
     invocation.options = await parseOptions(invocation, optionsSchema);
     status = await execute(invocation);
   } else if (invocation.command === 'textconv') {
-    const {execute, optionsSchema} = await import('./commands/textconv.mjs');
+    const {execute, optionsSchema} = await import('./commands/textconv.mts');
     invocation.options = await parseOptions(invocation, optionsSchema);
     status = await execute(invocation);
   } else if (invocation.command === 'unlock') {
-    const {execute, optionsSchema} = await import('./commands/unlock.mjs');
+    const {execute, optionsSchema} = await import('./commands/unlock.mts');
     invocation.options = await parseOptions(invocation, optionsSchema);
     status = await execute(invocation);
   } else {

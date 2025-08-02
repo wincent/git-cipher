@@ -7,13 +7,13 @@ import {readFile} from 'node:fs/promises';
 import {join, relative, resolve} from 'node:path';
 import {cwd, stdout} from 'node:process';
 
-import Config from '../Config.mjs';
-import {isErrnoException} from '../assert.mjs';
-import commonOptions from '../commonOptions.mjs';
-import git from '../git.mjs';
-import * as log from '../log.mjs';
-import markdown from '../markdown.mjs';
-import parse from '../parse.mjs';
+import Config from '../Config.mts';
+import {isErrnoException} from '../assert.mts';
+import commonOptions from '../commonOptions.mts';
+import git from '../git.mts';
+import * as log from '../log.mts';
+import markdown from '../markdown.mts';
+import parse from '../parse.mts';
 
 export const description = 'lists encrypted files';
 

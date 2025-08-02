@@ -3,11 +3,11 @@
  * SPDX-License-Identifier: MIT
  */
 
-import {decrypt, verify} from './crypto.mjs';
-import * as log from './log.mjs';
-import parse from './parse.mjs';
+import {decrypt, verify} from './crypto.mts';
+import * as log from './log.mts';
+import parse from './parse.mts';
 
-import type {Secrets} from './Config.mjs';
+import type {Secrets} from './Config.mts';
 
 type SmudgeOptions = {
   checkFilename?: boolean;

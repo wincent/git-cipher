@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-import Scanner from './Scanner.mjs';
-import {BLOCK_CIPHER_HMAC_SIZE, BLOCK_CIPHER_IV_SIZE} from './crypto.mjs';
+import Scanner from './Scanner.mts';
+import {BLOCK_CIPHER_HMAC_SIZE, BLOCK_CIPHER_IV_SIZE} from './crypto.mts';
 
 type ParseResult = AlreadyDecrypted | ParseError | ParseSuccess;
 
