@@ -1,0 +1,5 @@
+examples/empty-file	diff=git-cipher	filter=git-cipher	merge=git-cipher
+examples/fifteen-bytes	diff=git-cipher	filter=git-cipher	merge=git-cipher
+examples/file	diff=git-cipher	filter=git-cipher	merge=git-cipher
+examples/single-byte	diff=git-cipher	filter=git-cipher	merge=git-cipher
+"examples/spaces in name"	diff=git-cipher	filter=git-cipher	merge=git-cipher

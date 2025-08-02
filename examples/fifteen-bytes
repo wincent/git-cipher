@@ -1,0 +1,9 @@
+magic = dev.wincent.git-cipher
+url = https://github.com/wincent/git-cipher/blob/v2.0.0-pre.3/PROTOCOL.md
+version = 2
+algorithm = aes-256-cbc
+filename = "examples/fifteen-bytes"
+iv = 915e3d9b3c82c4c874341c363387cacd
+ciphertext =
+be93785369ad07f4c31bb45d0a3c337f
+hmac = 777a25d09b7f30d278ee05d9ca7a384d6e9ea4e2a70512d5a92cc7c89453ebfd

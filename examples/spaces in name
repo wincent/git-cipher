@@ -1,0 +1,9 @@
+magic = dev.wincent.git-cipher
+url = https://github.com/wincent/git-cipher/blob/v2.0.0-pre.3/PROTOCOL.md
+version = 2
+algorithm = aes-256-cbc
+filename = "examples/spaces in name"
+iv = 2e92f078c41ff0bacc2019468f9e4295
+ciphertext =
+6795387fab48eddc4ac0e9a8b6eedc3a
+hmac = d22330db01826eb290f3a5b140dc67fe39720992fcaed7f84181f4e7867e669c

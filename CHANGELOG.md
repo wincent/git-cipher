@@ -1,3 +1,23 @@
+# next (not yet released)
+
+- ...
+
+# 2.0.0-pre.3 (2 July 2024)
+
+- Updated protocol version from 1 to 2.
+
+# 2.0.0-pre.2 (10 September 2022)
+
+- Basically feature complete.
+
+# 2.0.0-pre.1 (3 August 2022)
+
+- Republish with missing file included.
+
+# 2.0.0-pre.0 (3 August 2022)
+
+- Published placeholder package ("blinking light" demo) to npm.
+
 # 1.1 (2 August 2022)
 
 - Allow `command` check to work on Linux systems without a concrete `command` executable like macOS has.

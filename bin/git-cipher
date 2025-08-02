@@ -1,524 +1,116 @@
-#!/usr/bin/env ruby
-# git-cipher -- encrypt/decrypt files
-
-require 'fileutils'
-require 'pathname'
-require 'shellwords'
-require 'tempfile'
-
-class Cipher
-  EXTENSION = 'encrypted'
-  DEFAULT_GPG_USERS  = 'greg@hurrell.net,wincent@github.com'
-  EXECUTABLE_EXTENSIONS = %w[.js .sh]
-  STATUS = {
-    'MISSING' => 0b001,
-    'MODIFIED' => 0b010,
-    'STALE' => 0b100,
-  }
-  VALID_OPTIONS = %w[force help]
-  VALID_SUBCOMMANDS = %w[decrypt encrypt help log ls status]
-
-  def run
-    send @subcommand
-  end
-
-private
-
-  def initialize
-    @subcommand, @options, @files = process_args
-
-    if @options.include?('help') || @subcommand == 'help'
-      usage(@subcommand)
-    end
-
-    @force = @options.include?('force')
-  end
-
-  def blue(string)
-    colorize(string, 34)
-  end
-
-  def check_ignored(path)
-    puts "[warning: #{path} is not ignored]" unless is_ignored?(path)
-  end
-
-  def colorize(string, color)
-    "\e[#{color}m#{string}\e[0m"
-  end
-
-  def command_name
-    @command_name ||= begin
-      if `ps -p #{Process.ppid.to_i}` =~ /\bgit cipher\b/
-        'git cipher'
-      else
-        File.basename(__FILE__)
-      end
-    rescue
-      File.basename(__FILE__)
-    end
-  end
-
-  def command_path(command)
-    path = `sh -c command\\ -v\\ #{escape command}`.chomp
-    die "required dependency #{command} not found" if path.empty?
-    path
-  end
-
-  def decrypt
-    if @files.empty?
-      puts 'No explicit paths supplied: decrypting all matching files'
-      matching.each { |file| decrypt!(file) }
-    else
-      @files.each { |file| decrypt!(file) }
-    end
-  end
-
-  def decrypt!(file)
-    pathname = Pathname.new(file)
-    basename = pathname.basename.to_s
-    unless basename.start_with?('.')
-      die "#{file} does not begin with a period"
-    end
-
-    unless basename.end_with?(".#{EXTENSION}")
-      die "#{file} does not have an .#{EXTENSION} extension"
-    end
-
-    unless pathname.exist?
-      die "#{file} does not exist"
-    end
-
-    outfile = pathname.dirname + basename.gsub(
-      /\A\.|\.#{EXTENSION}\z/, ''
-    )
-
-    print "#{file} -> #{outfile} "
-
-    if FileUtils.uptodate?(outfile, [file]) && !@force
-      # decrypted is newer than encrypted; it might have local changes which we
-      # could blow away, so warn
-      puts red('[warning: plain-text newer than ciphertext; skipping]')
-    else
-      print green('[decrypting ...')
-      gpg_decrypt(file, outfile)
-      if $?.success?
-        puts green(' done]')
-
-        File.chmod(mode(outfile), outfile)
-
-        # Mark plain-text as older than ciphertext, this will prevent a
-        # bin/encrypt run from needlessly changing the contents of the ciphertext
-        # (as the encryption is non-deterministic).
-        time = File.mtime(file) - 1
-        File.utime(time, time, outfile)
-      else
-        print kill_line
-        puts red('[decrypting ... failed; bailing]')
-        exit $?.exitstatus
-      end
-
-      check_ignored(outfile)
-    end
-  end
-
-  def die(msg)
-    STDERR.puts red('error:'), strip_heredoc(msg)
-    exit 1
-  end
-
-  def encrypt
-    if @files.empty?
-      puts 'No explicit paths supplied: encrypting all matching files'
-      matching.each do |file|
-        file = Pathname.new(file)
-        encrypt!(
-          file.dirname +
-          file.basename.to_s.gsub(/\A\.|\.#{EXTENSION}\z/, '')
-        )
-      end
-    else
-      @files.each { |file| encrypt!(Pathname.new(file)) }
-    end
-  end
-
-  def encrypt!(file)
-    unless file.exist?
-      die "#{file} does not exist"
-    end
-
-    outfile = file.dirname + ".#{file.basename}.#{EXTENSION}"
-
-    print "#{file} -> #{outfile} "
-    if FileUtils.uptodate?(outfile, [file]) && !@force
-      puts blue('[up to date]')
-    else
-      recipients = gpg_users.
-        split(/\s*,\s*/).
-        map { |u| "--recipient #{escape u}"}.
-        join(' ')
-      print green('[encrypting ...')
-      execute(%{
-        #{escape command_path('gpg')}
-          --armor
-          --quiet
-          --batch
-          --no-tty
-          --yes
-          #{recipients}
-          --output #{escape outfile}
-          --encrypt #{escape file}
-      })
-      if $?.success?
-        puts green(' done]')
-      else
-        print kill_line
-        puts red('[encrypting ... failed; bailing]')
-        exit $?.exitstatus
-      end
-    end
-
-    File.chmod(mode(file), file)
-    check_ignored(file)
-  end
-
-  def escape(string)
-    Shellwords.escape(string)
-  end
-
-  def execute(string)
-    %x{#{string.gsub("\n", ' ')}}
-  end
-
-  def get_config(key)
-    value = `#{escape command_path('git')} config cipher.#{key}`.chomp
-    return if value.empty?
-    value
-  end
-
-  def gpg_decrypt(file, outfile)
-    execute(%{
-      #{escape command_path('gpg')}
-        -q
-        --yes
-        --batch
-        --no-tty
-        --use-agent
-        -o #{escape outfile}
-        -d #{escape file}
-    })
-  end
-
-  def gpg_users
-    ENV['GPG_USER'] || get_config('gpguser') || DEFAULT_GPG_USERS
-  end
-
-  def green(string)
-    colorize(string, 32)
-  end
-
-  def is_ignored?(path)
-    `#{escape command_path('git')} check-ignore -q #{escape path}`
-    return $?.exitstatus.zero?
-  end
-
-  def kill_line
-    # 2K deletes the line, 0G moves to column 0
-    # see: http://en.wikipedia.org/wiki/ANSI_escape_code
-    "\e[2K\e[0G"
-  end
-
-  def log
-    if @files.empty?
-      puts 'No explicit paths supplied: logging all matching files'
-      log!(nil)
-    else
-      log!(@files)
-    end
-  end
-
-  def log!(files)
-    if files.nil?
-      commits = execute(%{
-        #{escape command_path('git')} log
-        --pretty=format:%H
-        --topo-order
-        -- **/.*.#{EXTENSION}
-      }).split
-    else
-      # Would use `--follow` here, but that only works with a single file and, more
-      # importantly, all encrypted files look like random noise, so `--follow`
-      # won't do anything useful; log will stop at first rename.
-      commits = execute(%{
-        #{escape command_path('git')} log
-        --pretty=format:%H
-        --topo-order
-        -- #{files.map { |f| escape(f) }.join(' ')}
-      }).split
-    end
-
-    commits.each do |commit|
-      tempfiles = []
-      begin
-        # Print commit message.
-        puts execute(%{
-          #{escape command_path('git')} --no-pager log
-          --color=always -1 #{commit}
-        })
-        puts
-
-        # See which files changed in this commit.
-        changed = wc(commit, files).split("\0")
-
-        changed.each do |file|
-          suffix = "-#{File.basename(file)}"
-
-          # Get plaintext "post" image.
-          tempfiles.push(post = temp_write(show(file, commit)))
-          tempfiles.push(post_plaintext = temp_write(
-            post.size.zero? ? '' : gpg_decrypt(post.path, '-'),
-            suffix
-          ))
-
-          # Get plaintext "pre" image.
-          tempfiles.push(pre = temp_write(show(file, "#{commit}~")))
-          tempfiles.push(pre_plaintext = temp_write(
-            pre.size.zero? ? '' : gpg_decrypt(pre.path, '-'),
-            suffix
-          ))
-
-          # Print pre-to-post diff.
-          puts execute(%{
-            #{escape command_path('git')} --no-pager diff
-            --color=always
-            #{escape pre_plaintext.path}
-            #{escape post_plaintext.path}
-          })
-        end
-        puts
-      ensure
-        tempfiles.each do |tempfile|
-          tempfile.close
-          tempfile.unlink
-        end
-      end
-    end
-  end
-
-  def ls
-    matching.each { |file| puts file }
-  end
-
-  def status
-    exitstatus = 0
-    matching.each do |file|
-      pathname = Pathname.new(file)
-      basename = pathname.basename.to_s
-      outfile = pathname.dirname + basename.gsub(
-        /\A\.|\.#{EXTENSION}\z/, ''
-      )
-      if outfile.exist?
-        if FileUtils.uptodate?(outfile, [file])
-          # Plain-text is newer than ciphertext.
-          description = yellow('[MODIFIED]')
-          exitstatus |= STATUS['MODIFIED']
-        else
-          if (File.mtime(file) - File.mtime(outfile)) > 5
-            # Plain-text is signficantly older than ciphertext.
-            description = yellow('[STALE]')
-            exitstatus |= STATUS['STALE']
-          else
-            description = green('[OK]')
-          end
-        end
-      else
-        description = red('[MISSING]')
-        exitstatus |= STATUS['MISSING']
-      end
-      puts "#{file}: #{description}"
-    end
-    exit exitstatus
-  end
-
-  def matching
-    Dir.glob("**/*.#{EXTENSION}", File::FNM_DOTMATCH).reject do |candidate|
-      is_ignored?(candidate)
-    end
-  end
-
-  # Determine the appropriate mode for the given decrypted plaintext
-  # `file` based on its file extension.
-  def mode(file)
-    if EXECUTABLE_EXTENSIONS.include?(Pathname.new(file).extname)
-      0700
-    else
-      0600
-    end
-  end
-
-  def normalize_option(option)
-    normal = option.dup
-
-    if normal.sub!(/\A--/, '') # long option
-      found = VALID_OPTIONS.find { |o| o == normal }
-    elsif normal.sub!(/\A-/, '') # short option
-      found = VALID_OPTIONS.find { |o| o[0] == normal }
-    end
-
-    die "unrecognized option: #{option}" if found.nil?
-
-    found
-  end
-
-  def process_args
-    options, files = ARGV.partition { |arg| arg.start_with?('-') }
-    subcommand = files.shift
-
-    options.map! { |option| normalize_option(option) }
-
-    unless VALID_SUBCOMMANDS.include?(subcommand)
-      if subcommand.nil?
-        message = 'no subcommand'
-      else
-        message = 'unrecognized subcommand'
-      end
-      die [message, "expected one of #{VALID_SUBCOMMANDS.inspect}"].join(': ')
-    end
-
-    [subcommand, options, files]
-  end
-
-  def red(string)
-    colorize(string, 31)
-  end
-
-  def show(file, commit)
-    # Redirect stderr to /dev/null because the file might not have existed prior
-    # to this commit.
-    execute(%{
-      #{escape command_path('git')} show
-      #{commit}:#{escape file} 2> /dev/null
-    })
-  end
-
-  def strip_heredoc(doc)
-    # based on method of same name from Rails
-    indent = doc.scan(/^[ \t]*(?=\S)/).map(&:size).min || 0
-    doc.gsub(/^[ \t]{#{indent}}/, '')
-  end
-
-  def temp_write(contents, suffix = '')
-    file = Tempfile.new(['git-cipher-', suffix])
-    file.write(contents)
-    file.flush
-    file
-  end
-
-  # Print usage information and exit.
-  def usage(subcommand)
-    case subcommand
-    when 'decrypt'
-      puts strip_heredoc(<<-USAGE)
-        #{command_name} decrypt [-f|--force] [FILES...]
-
-        Decrypts files that have been encrypted for storage in version control
-
-            Decrypt two files, but only if the corresponding plain-text files
-            are missing or older:
-
-                #{command_name} decrypt .foo.encrypted .bar.encrypted
-
-            Decrypt all decryptable files:
-
-                #{command_name} decrypt
-
-            (Re-)decrypt all decryptable files, even those whose corresponding
-            plain-text files are newer:
-
-                #{command_name} decrypt -f
-                #{command_name} decrypt --force # (alternative syntax)
-      USAGE
-    when 'encrypt'
-      puts strip_heredoc(<<-USAGE)
-        #{command_name} encrypt [-f|--force] [FILES...]
-
-        Encrypts files for storage in version control
-
-            Encrypt two files, but only if the corresponding ciphertext files
-            are missing or older:
-
-                #{command_name} encrypt foo bar
-
-            Encrypt all encryptable files:
-
-                #{command_name} encrypt
-
-            (Re-)encrypt all encryptable files, even those whose corresponding
-            ciphertext files are newer:
-
-                #{command_name} encrypt -f
-                #{command_name} encrypt --force # (alternative syntax)
-      USAGE
-    when 'log'
-      puts strip_heredoc(<<-USAGE)
-        #{command_name} log FILE
-
-          Shows the log message and decrypted diff for FILE
-          (analogous to `git log -p -- FILE`).
-
-              #{command_name} log foo
-      USAGE
-    when 'ls'
-      puts strip_heredoc(<<-USAGE)
-        #{command_name} ls
-
-          Lists the encrypted files in the current directory and
-          its subdirectories.
-      USAGE
-    when 'status'
-      puts strip_heredoc(<<-USAGE)
-        #{command_name} status
-
-          Shows the status of encrypted files in the current directory and
-          its subdirectories.
-
-          Exits with status #{STATUS['MISSING']} if any decrypted file is missing (eg. "MISSING").
-          Exits with status #{STATUS['MODIFIED']} if any decrypted file has modifications (eg. "MODIFIED").
-          Exits with status #{STATUS['STALE']} if any encrypted file has modifications (eg. "STALE").
-          When multiple conditions apply, they are OR-ed together to produce a status code.
-      USAGE
-    else
-      puts strip_heredoc(<<-USAGE)
-        Available commands (invoke any with -h or --help for more info):
-
-            #{command_name} decrypt
-            #{command_name} encrypt
-            #{command_name} log
-            #{command_name} ls
-            #{command_name} status
-      USAGE
-    end
-
-    exit
-  end
-
-  # Show which files (out of `files`) changed in `commit`.
-  def wc(commit, files)
-    if files.nil?
-      execute(%{
-        #{escape command_path('git')} show --name-only --pretty=format: -z #{commit} --
-        **/.*.#{EXTENSION}
-      })
-    else
-      execute(%{
-        #{escape command_path('git')} show --name-only --pretty=format: -z #{commit} --
-        #{files.map { |f| escape(f) }.join(' ')}
-      })
-    end
-  end
-
-  def yellow(string)
-    colorize(string, 33)
-  end
-end
-
-Cipher.new.run
+#!/usr/bin/env bash
+
+set -e
+
+# Script to facilitate running `git-cipher` from a development environment or in
+# a local Git repository.
+#
+# Installs a copy of `node` into `vendor/node/` using `n` (in the subtree at
+# `vendor/n/`). This modality is interesting for development purposes, or for
+# very early bootstrapping on a system that doesn't yet have NodeJS on it (only
+# Bash and Git are required).
+#
+# Alternatively, assuming a modern version of NodeJS is on the system, you can
+# get a built copy with `npm install git-cipher`, and run it use `git cipher`.
+
+# Get directory containing current script.
+#
+# Via: https://stackoverflow.com/a/246128/2103996
+SOURCE=${BASH_SOURCE[0]}
+while [ -L "$SOURCE" ]; do
+  DIRECTORY=$(cd -P "$(dirname "$SOURCE")" >/dev/null 2>&1 && pwd)
+  SOURCE=$(readlink "$SOURCE")
+  [[ $SOURCE != /* ]] && SOURCE=$DIRECTORY/$SOURCE
+done
+DIRECTORY=$(cd -P "$(dirname "$SOURCE")" >/dev/null 2>&1 && pwd)
+ROOT="$DIRECTORY/.."
+
+NODE_VERSION=22.18.0
+VENDOR="$ROOT/vendor"
+MAIN="$ROOT/src/main.mts"
+N_EXE="$VENDOR/n/bin/n"
+export N_PREFIX="$VENDOR/node"
+YARN_INTEGRITY="$ROOT/node_modules/.yarn-integrity"
+
+# ANSI color codes.
+# https://stackoverflow.com/a/5947802/2103996
+BOLD='\033[0;1m'
+GREEN='\033[1;32m'
+PURPLE='\033[1;35m'
+RED='\033[1;31m'
+RESET='\033[0m'
+YELLOW='\033[1;33m'
+
+# No associative arrays in Bash < v4, so can't do:
+#
+#     declare -A LOG_LEVEL
+#
+# Instead, we do:
+#
+LOG_LEVEL_EMERGENCY=0
+LOG_LEVEL_ALERT=1
+LOG_LEVEL_CRITICAL=2
+LOG_LEVEL_ERROR=3
+LOG_LEVEL_WARNING=4
+LOG_LEVEL_NOTICE=5
+LOG_LEVEL_INFO=6
+LOG_LEVEL_DEBUG=7
+
+LOG_LEVEL=$LOG_LEVEL_INFO
+
+for VAR in "$@"
+do
+  if [[ $VAR = "--debug" ]]; then
+    LOG_LEVEL=$LOG_LEVEL_DEBUG
+    DEBUG=1
+  elif [[ $VAR = "--quiet" || $VAR = "-q" ]]; then
+    LOG_LEVEL=$LOG_LEVEL_ERROR
+    unset DEBUG
+  fi
+done
+
+log_debug() {
+  if [[ $LOG_LEVEL -ge $LOG_LEVEL_DEBUG ]]; then
+    echo -e "${PURPLE}[debug]  ${RESET} $*" >&2
+  fi
+}
+
+log_error() {
+  if [[ $LOG_LEVEL -ge $LOG_LEVEL_ERROR ]]; then
+    echo -e "${RED}[error]  ${RESET} $*" >&2
+  fi
+}
+
+log_info() {
+  if [[ $LOG_LEVEL -ge $LOG_LEVEL_INFO ]]; then
+    echo -e "${BOLD}[info]   ${RESET} $*" >&2
+  fi
+}
+
+log_notice() {
+  if [[ $LOG_LEVEL -ge $LOG_LEVEL_NOTICE ]]; then
+    echo -e "${GREEN}[notice] ${RESET} $*" >&2
+  fi
+}
+
+log_warn() {
+  if [[ $LOG_LEVEL -ge $LOG_LEVEL_WARNING ]]; then
+    echo -e "${YELLOW}[warning]${RESET} $*" >&2
+  fi
+}
+
+if [[ -z $("$N_EXE" which "$NODE_VERSION") ]]; then
+  log_info "Installing NodeJS $NODE_VERSION"
+  "$N_EXE" "$NODE_VERSION"
+else
+  log_debug "Using existing NodeJS $NODE_VERSION installation"
+fi
+
+if [ ! -e "$YARN_INTEGRITY" ]; then
+  log_error "No artifact at $YARN_INTEGRITY; did you forget to \`yarn\`? (skipping type-checking)"
+else
+  log_info "Checking types"
+  "$ROOT/bin/yarn" run tsc --noEmit
+fi
+
+exec env __DEV__=1 "$ROOT/bin/node" "$MAIN" "$@"
