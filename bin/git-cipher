@@ -30,7 +30,6 @@ VENDOR="$ROOT/vendor"
 MAIN="$ROOT/src/main.mts"
 N_EXE="$VENDOR/n/bin/n"
 export N_PREFIX="$VENDOR/node"
-YARN_INTEGRITY="$ROOT/node_modules/.yarn-integrity"
 
 # ANSI color codes.
 # https://stackoverflow.com/a/5947802/2103996
@@ -104,13 +103,6 @@ if [[ -z $("$N_EXE" which "$NODE_VERSION") ]]; then
   "$N_EXE" "$NODE_VERSION"
 else
   log_debug "Using existing NodeJS $NODE_VERSION installation"
-fi
-
-if [ ! -e "$YARN_INTEGRITY" ]; then
-  log_error "No artifact at $YARN_INTEGRITY; did you forget to \`yarn\`? (skipping type-checking)"
-else
-  log_info "Checking types"
-  "$ROOT/bin/yarn" run tsc --noEmit
 fi
 
 exec env __DEV__=1 "$ROOT/bin/node" "$MAIN" "$@"
