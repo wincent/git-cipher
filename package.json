@@ -11,17 +11,18 @@
   "repository": "https://github.com/wincent/git-cipher",
   "author": "Greg Hurrell <greg@hurrell.net>",
   "license": "MIT",
-  "private": false,
   "devDependencies": {
-    "@types/node": "*",
-    "typescript": "*"
+    "@types/node": "^24.1.0",
+    "esbuild": "^0.25.8",
+    "prettier": "^3.6.2",
+    "typescript": "5.9.2"
   },
   "scripts": {
-    "build": "npx -y esbuild src/main.mts --bundle --format=esm --platform=node --sourcemap --outfile=lib/main.mjs",
+    "build": "esbuild src/main.mts --bundle --format=esm --platform=node --sourcemap --outfile=lib/main.mjs",
     "clean": "rm -r lib/*",
-    "compile": "bin/yarn run tsc --noEmit",
-    "format:check": "npx -y prettier --check \"**/*.{md,mts}\" \"*.{md,json}\"",
-    "format": "npx -y prettier --write \"**/*.{md,mts}\" \"*.{md,json}\""
+    "compile": "tsc --noEmit",
+    "format:check": "prettier --check \"**/*.{md,mts}\" \"*.{md,json}\"",
+    "format": "prettier --write \"**/*.{md,mts}\" \"*.{md,json}\""
   },
   "type": "module",
   "engines": {
