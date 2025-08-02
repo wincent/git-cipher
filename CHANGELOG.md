@@ -1,6 +1,10 @@
-# next (not yet released)
+# main (not yet released)
 
 - ...
+
+# 2.0.0-pre.4 (2 August 2025)
+
+- fix: address possible issue in wrapping algorithm.
 
 # 2.0.0-pre.3 (2 July 2024)
 
