@@ -17,7 +17,7 @@
     "typescript": "*"
   },
   "scripts": {
-    "build": "npx -y esbuild src/main.mts --bundle --format=esm --platform=node --outfile=lib/main.mjs",
+    "build": "npx -y esbuild src/main.mts --bundle --format=esm --platform=node --sourcemap --outfile=lib/main.mjs",
     "clean": "rm -r lib/*",
     "compile": "bin/yarn run tsc --noEmit",
     "format:check": "npx -y prettier --check \"**/*.{md,mts}\" \"*.{md,json}\"",
