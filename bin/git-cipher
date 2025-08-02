@@ -25,7 +25,7 @@ done
 DIRECTORY=$(cd -P "$(dirname "$SOURCE")" >/dev/null 2>&1 && pwd)
 ROOT="$DIRECTORY/.."
 
-NODE_VERSION=18.7.0
+NODE_VERSION=22.18.0
 VENDOR="$ROOT/vendor"
 MAIN="$ROOT/lib/main.mjs"
 N_EXE="$VENDOR/n/bin/n"

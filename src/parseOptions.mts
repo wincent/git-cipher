@@ -84,7 +84,7 @@ function executableName(): string {
     // Probably running from __DEV__ via `bin/git-cipher`; first two elements of
     // `argv` will resemble:
     //
-    // - '/some/absolute/path/to/repo/vendor/node/n/versions/node/18.7.0/bin/node'
+    // - '/some/absolute/path/to/repo/vendor/node/n/versions/node/22.18.0/bin/node'
     // - '/some/absolute/path/to/repo/lib/main.mjs'
     return 'git-cipher';
   } else {
