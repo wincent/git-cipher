@@ -18,4 +18,4 @@ VENDOR="$ROOT/vendor"
 N_EXE="$VENDOR/n/bin/n"
 export N_PREFIX="$VENDOR/node"
 
-"$N_EXE" "$@"
+"$N_EXE" --download "$@"
