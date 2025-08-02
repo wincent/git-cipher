@@ -32,5 +32,7 @@ bin/yarn version
 bin/yarn build
 git push --follow-tags origin next
 npm login # May be required one time only, in order for `publish` to work in the next step.
-bin/yarn publish
+npm publish
 ```
+
+**NOTE:** We're using `npm publish` and not `yarn publish` because the latter appears to have different heuristics fo determining what is included in the published tarball (specifically, it includes `.gitignore` files even in directories not listed under the "files" property of the `package.json` (ie. `vendor/node/.gitignore`).
