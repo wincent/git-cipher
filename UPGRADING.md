@@ -48,15 +48,14 @@ In this example, we'll assume that the git-cipher repository is checked out in a
 
 1. Ensure plaintext for all files managed by 1.x is currently on disk and up-to-date; using 1.x, this can be done with `vendor/bin/git-cipher status`.
 2. Update the git-cipher module to point at the new version.
-3. Run `git submodule update --init` _in the submodule_ to prepare the vendored copy of `n`.
-4. Run `yarn` in the submodule to install dependencies (TypeScript).
-5. Run `yarn run tsc` in the submodule to build the project.
-6. In the superproject, run `vendor/bin/git-cipher init` to generate new secrets.
-7. Run `vendor/bin/git-cipher unlock`; you will probably need `--force` here because you most likely have a dirty worktree at this point.
-8. If plaintext is available (it should be, given step "1"), remove the corresponding entries from the `.gitignore` file; stage these changes with `git add`.
-9. Add the encrypted secrets at `.git-cipher/secrets.json.asc` with `git add`.
-10. Start managing plaintext files with `vendor/bin/git-cipher add <file...>`.
-11. Remove old encrypted files from 1.x (ie. files with names of the form `.<base>.encrypted`) with `git rm`.
-12. Add and commit the results (using `git add` and `git commit`).
+3. Run `yarn` in the submodule to install dependencies (TypeScript).
+4. Run `yarn run tsc` in the submodule to build the project.
+5. In the superproject, run `vendor/bin/git-cipher init` to generate new secrets.
+6. Run `vendor/bin/git-cipher unlock`; you will probably need `--force` here because you most likely have a dirty worktree at this point.
+7. If plaintext is available (it should be, given step "1"), remove the corresponding entries from the `.gitignore` file; stage these changes with `git add`.
+8. Add the encrypted secrets at `.git-cipher/secrets.json.asc` with `git add`.
+9. Start managing plaintext files with `vendor/bin/git-cipher add <file...>`.
+10. Remove old encrypted files from 1.x (ie. files with names of the form `.<base>.encrypted`) with `git rm`.
+11. Add and commit the results (using `git add` and `git commit`).
 
 If everything is set up correctly, commands like Git should show the plaintext of the protected files when using commands like `git show` and `git log -p`, but this is merely a presentational convenience that applies when you've run `git-cipher unlock`. To confirm that the committed files are _actually_ stored as ciphertext, you can run `git-cipher lock` and then re-run the `git show` or `git log -p` command. Alternatively, you can bypass the presentational aids with `git -c diff.git-cipher.textconv=cat -c diff.git-cipher.binary=false show --no-textconv -- <file>` (or the equivalent, substituting `log -p` for `show`). As a convenience, git-cipher provides `diff`, `log`, and `show` subcommands for streamlining this kind of inspection; invoke these with a `--reveal` switch to show ciphertext as it actually exists in Git object storage.

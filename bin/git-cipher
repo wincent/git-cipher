@@ -5,7 +5,7 @@ set -e
 # Script to facilitate running `git-cipher` from a development environment or in
 # a local Git repository.
 #
-# Installs a copy of `node` into `vendor/node/` using `n` (in the submodule at
+# Installs a copy of `node` into `vendor/node/` using `n` (in the subtree at
 # `vendor/n/`). This modality is interesting for development purposes, or for
 # very early bootstrapping on a system that doesn't yet have NodeJS on it (only
 # Bash and Git are required).
