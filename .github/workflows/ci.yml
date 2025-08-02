@@ -2,9 +2,9 @@ name: ci
 
 on:
   push:
-    branches: [next, pu]
+    branches: [main, next, pu]
   pull_request:
-    branches: [next, pu]
+    branches: [main, next, pu]
 
 jobs:
   check-lockfile:
