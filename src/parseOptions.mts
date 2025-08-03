@@ -9,6 +9,7 @@ import {argv} from 'node:process';
 
 import ExitStatus from './ExitStatus.mts';
 import {assertIsObject, hasKey} from './assert.mts';
+import executableName from './executableName.mts';
 import * as log from './log.mts';
 import {commands} from './paths.mts';
 import {wrapWithInset} from './wrap.mts';
@@ -76,23 +77,6 @@ export function assertOptionsSchema(
   }
 }
 
-function executableName(): string {
-  // Sadly, at this point we can't know if called as `git cipher <subcommand>`
-  // or `git-cipher <subcommand>` (ie. via $PATH) or `bin/git-cipher
-  // <subcommand>` (ie. in `__DEV__` env); so we take a weak guess.
-  if (argv[0]?.includes('/vendor/node/n/versions/node/')) {
-    // Probably running from __DEV__ via `bin/git-cipher`; first two elements of
-    // `argv` will resemble:
-    //
-    // - '/some/absolute/path/to/repo/vendor/node/n/versions/node/22.18.0/bin/node'
-    // - '/some/absolute/path/to/repo/lib/main.mts'
-    return 'git-cipher';
-  } else {
-    // Probably installed globally in `$PATH`.
-    return 'git cipher';
-  }
-}
-
 /**
  * When `wrapGit` is `true`, only limited parsing is done (checking to see
  * whether `--help` has been provided); everything else passed through to `git`.
@@ -109,8 +93,8 @@ export default async function parseOptions(
   const output: Options = {};
   const wrapGit = options?.wrapGit;
 
-  // Special case; for any command `--help` should print usage information and
-  // exit immediately.
+  // Special case: for any command `--help` should print usage information for
+  // that command and exit immediately.
   if (input['--help']) {
     const executable = executableName();
 
@@ -159,10 +143,12 @@ export default async function parseOptions(
         }
       });
 
-    log.printLine(
-      `\nRun \`${executable} help ${invocation.command}\` for subcommand documentation.`,
-    );
-    log.printLine(`Run \`${executable} help\` for a list of subcommands.`);
+    if (invocation.command === 'help') {
+      log.printLine(
+        `\nRun \`${executable} help <subcommand>\` for subcommand documentation.`,
+      );
+      log.printLine(`Run \`${executable} help\` for a list of subcommands.`);
+    }
 
     throw new ExitStatus(0);
   }

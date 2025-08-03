@@ -8,9 +8,11 @@ import {readdir} from 'node:fs/promises';
 import {extname, join} from 'node:path';
 
 import commonOptions from '../commonOptions.mts';
+import executableName from '../executableName.mts';
 import * as log from '../log.mts';
 import markdown, {assertMarkdown} from '../markdown.mts';
 import {assertOptionsSchema} from '../parseOptions.mts';
+import VERSION from '../version.mts';
 
 const COMMANDISH = /^\w+(?:-\w+)*$/;
 
@@ -19,6 +21,13 @@ export const description = 'prints usage information';
 export const documentation = await markdown('git-cipher-help');
 
 export async function execute(invocation: Invocation): Promise<number> {
+  // Special case: given `--version`, print version information and exit
+  // immediately.
+  if (invocation.options['--version']) {
+    log.printLine(`git-cipher version ${VERSION}`);
+    return 0;
+  }
+
   const {commands: directory} = await import('../paths.mts');
 
   if (invocation.args.length) {
@@ -81,9 +90,21 @@ export async function execute(invocation: Invocation): Promise<number> {
   for (const name of keys) {
     log.printLine(`    ${name.padEnd(maximum)}    ${commands[name]}`);
   }
+
+  const executable = executableName();
+
+  log.printLine(
+    `\nRun \`${executable} help <subcommand>\` for subcommand documentation.`,
+  );
+
   return 0;
 }
 
 export const optionsSchema = {
   ...commonOptions,
+  '--version': {
+    defaultValue: false,
+    kind: 'switch',
+    description: 'show version information and exit',
+  },
 } as const;

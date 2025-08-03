@@ -65,7 +65,14 @@ for (let i = 2; i < argv.length; i++) {
 }
 
 if (!invocation.command) {
+  // Act as if user had run `git cipher help`.
   invocation.command = 'help';
+
+  if (invocation.options['--help']) {
+    // But don't show help for `help`; user has to run `git cipher help --help`
+    // explicitly if they want that.
+    delete invocation.options['--help'];
+  }
 }
 
 // Note that some subcommands might want to override this (for example
