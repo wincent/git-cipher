@@ -7,11 +7,11 @@ set -e
 #
 # Installs a copy of `node` into `vendor/node/` using `n` (in the subtree at
 # `vendor/n/`). This modality is interesting for development purposes, or for
-# very early bootstrapping on a system that doesn't yet have NodeJS on it (only
+# very early bootstrapping on a system that doesn't yet have Node.js on it (only
 # Bash and Git are required).
 #
-# Alternatively, assuming a modern version of NodeJS is on the system, you can
-# get a built copy with `npm install git-cipher`, and run it use `git cipher`.
+# Alternatively, assuming a modern version of Node.js is on the system, you can
+# get a built copy with `npm install git-cipher`, and run it using `git cipher`.
 
 # Get directory containing current script.
 #
@@ -99,10 +99,10 @@ log_warn() {
 }
 
 if [[ -z $("$N_EXE" which "$NODE_VERSION") ]]; then
-  log_info "Installing NodeJS $NODE_VERSION"
+  log_info "Installing Node.js $NODE_VERSION"
   "$N_EXE" "$NODE_VERSION"
 else
-  log_debug "Using existing NodeJS $NODE_VERSION installation"
+  log_debug "Using existing Node.js $NODE_VERSION installation"
 fi
 
 exec env __DEV__=1 "$ROOT/bin/node" "$MAIN" "$@"

@@ -10,7 +10,7 @@ This document describes version 2 of the git-cipher protocol. See "History" for 
 # Implementations
 
 - High-level cryptographic functionality (public-key encryption/decryption) is provided by the `gpg` executable from [GnuPG](https://gnupg.org/).
-- Lower-level cryptographic primitives (random number generation, key derivation, HMAC digests, symmetric encryption/decryption etc) are provided by the [NodeJS `crypto` module](https://nodejs.org/api/crypto.html), itself a wrapper around [OpenSSL](https://www.openssl.org/).
+- Lower-level cryptographic primitives (random number generation, key derivation, HMAC digests, symmetric encryption/decryption etc) are provided by the [Node.js `crypto` module](https://nodejs.org/api/crypto.html), itself a wrapper around [OpenSSL](https://www.openssl.org/).
 
 > ⚠️Note that the use of these lower-level primitives means that this project is wilfully ignoring the maxim to "never roll your own crypto". It is not suitable for protecting high-value secrets! Use it at your own risk. For reference, the author is using this project to obfuscate "sensitive" data such as hostnames in Git repositories; he is not using it to protect actually valuable things like Bitcoin private keys.
 

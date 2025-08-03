@@ -2,7 +2,7 @@
 
 ## Differences between version 1.x and version 2.x
 
-In brief, version 1.x was a Ruby script that used GnuPG for encryption. While it was intended to work in the context of a Git repository, it didn't use any special Git functionality beyond `gitignore`. Version 2.x is a from-scratch rewrite based on NodeJS, using a completely distinct cryptographic architecture, and deep integration with Git features such as "smudge" and "clean" filters.
+In brief, version 1.x was a Ruby script that used GnuPG for encryption. While it was intended to work in the context of a Git repository, it didn't use any special Git functionality beyond `gitignore`. Version 2.x is a from-scratch rewrite based on Node.js, using a completely distinct cryptographic architecture, and deep integration with Git features such as "smudge" and "clean" filters.
 
 ### About 1.x
 
@@ -34,7 +34,7 @@ In more detail:
 - To make use of those secrets and work with managed files in the repository, the user runs `git-cipher unlock`. This causes a copy of the secrets to be written to `.git/git-cipher/secrets.json` and plaintext copies of the encrypted files in the repository are written to the worktree.
 - To "lock" the repository, the user runs `git-cipher lock`, which disposes of the local copy of the secrets at `.git/git-cipher/secrets.json`, and rewrites all of the encrypted files in the worktree to contain their ciphertext contents.
 
-Under the covers, this is using [NodeJS's `crypto` module](https://nodejs.org/api/crypto.html), itself a wrapper around [OpenSSL](https://www.openssl.org/) for cryptography, and Git's "clean"/"smudge" filtering to make working with encrypted files _mostly_ transparent. For details of the 2.x protocol, see [PROTOCOL](PROTOCOL.md).
+Under the covers, this is using [Node.js's `crypto` module](https://nodejs.org/api/crypto.html), itself a wrapper around [OpenSSL](https://www.openssl.org/) for cryptography, and Git's "clean"/"smudge" filtering to make working with encrypted files _mostly_ transparent. For details of the 2.x protocol, see [PROTOCOL](PROTOCOL.md).
 
 In terms of security, 2.x is using OpenSSL (albeit indirectly). Unlike GnuPG, OpenSSL doesn't really qualify for the "fool-proof" label. There is scope for making a fundamental design or implementation flaw when using OpenSSL which would land squarely within the territory of "mistakes due to rolling your own crypto". This is especially so in the case of git-cipher, which not only uses AES-256 in CBC mode, but which jumps through some additional hoops in order to produce a deterministic encryption result by using an "effectively but not actually random" IV. While there is some precedent for this kind of approach in other projects such as [git-crypt](https://github.com/AGWA/git-crypt) and [transcrypt](https://github.com/elasticdog/transcrypt), the security of the approach is by no means guaranteed.
 
