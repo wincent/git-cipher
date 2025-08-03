@@ -5,7 +5,6 @@
 
 import assert from 'node:assert';
 import {join} from 'node:path';
-import {argv} from 'node:process';
 
 import ExitStatus from './ExitStatus.mts';
 import {assertIsObject, hasKey} from './assert.mts';
