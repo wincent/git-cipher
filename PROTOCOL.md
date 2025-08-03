@@ -1,6 +1,6 @@
 # Version
 
-This document describes version 2 of the git-cipher protocol.
+This document describes version 2 of the git-cipher protocol. See "History" for differences from the prior version.
 
 # History
 
@@ -91,7 +91,7 @@ This is the procedure followed to prepare a repository for working with git-ciph
 6. Derive a 256-bit (32-byte) encryption key from the passphrase and salt using the `scrypt` derivation function and default parameters[^scrypt]. At this point the passphrase and salt are discarded.
 7. Repeat steps 2 through 4 to produce a 256-bit (32-byte) authentication key.
 8. Generate a 256-bit (32-byte) salt using a CSPRNG.
-9. If we're performing this set-up for the first time, we will produce a file containing the new secrets. If we already have secrets by are wishing to re-encrypt them in order to change the set of GPG keys which have access to them, we use the existing secrets (previously made available with a call to `git-cipher unlock`). Construct a JSON representation of the authentication key, the encryption key, the salt, and a couple of additional fields, then encrypt it using `gpg` and commit the result to the repository at `.git-cipher/secrets.json.asc`. The additional fields are not required for encryption or decryption, and are merely informative; they are `version`, a positive integer describing the version of this PROTOCOL document that the implementation used to produce the file, and `url`, a link to the document.
+9. If we're performing this set-up for the first time, we will produce a file containing the new secrets. If we already have secrets but are wishing to re-encrypt them in order to change the set of GPG keys which have access to them, we use the existing secrets (previously made available with a call to `git-cipher unlock`). Construct a JSON representation of the authentication key, the encryption key, the salt, and a couple of additional fields, then encrypt it using `gpg` and commit the result to the repository at `.git-cipher/secrets.json.asc`. The additional fields are not required for encryption or decryption, and are merely informative; they are `version`, a positive integer describing the version of this PROTOCOL document that the implementation used to produce the file, and `url`, a link to the document describing the protocol.
 10. Use `git config filter.git-cipher.clean <command>` and `git config filter.git-cipher.smudge <command>` to configure the repo to use `git-cipher` to transparently encrypt and decrypt files. The exact `<command>` that will be configured depends on whether `git-cipher` is running from a local checkout (in which case, the command will be an absolute path pointing at the local copy) or from a global install running out of `$PATH` (in which case it will either be `git cipher clean` or `git cipher smudge`).
 11. Install pre-commit hook to report problems if unencrypted plain-text has been staged.
 

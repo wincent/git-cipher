@@ -13,12 +13,10 @@ const {
   scrypt,
 } = await import('node:crypto');
 
-import {VERSION} from './version.mts';
-
 const randomFill = promisify(randomFillAsync);
 
 export const PROTOCOL_URL =
-  `https://github.com/wincent/git-cipher/blob/v${VERSION}/PROTOCOL.md`;
+  `https://github.com/wincent/git-cipher/blob/main/PROTOCOL.md`;
 export const PROTOCOL_VERSION = 2;
 export const BLOCK_CIPHER_ALGORITHM = 'aes-256-cbc';
 
