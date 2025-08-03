@@ -2,6 +2,10 @@
 
 - ...
 
+# 2.0.0 (3 August 2025)
+
+- feat: don't churn blob contents when bumping version number
+
 # 2.0.0-pre.4 (2 August 2025)
 
 - fix: address possible issue in wrapping algorithm.

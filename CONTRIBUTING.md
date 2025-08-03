@@ -26,6 +26,8 @@ bin/yarn version --major --preid pre
 
 ## Publishing releases
 
+After updating the [CHANGELOG](./CHANGELOG.md):
+
 ```sh
 bin/yarn compile
 bin/yarn version
