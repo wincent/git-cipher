@@ -68,7 +68,7 @@ npm install -g git-cipher
 
 ### Installing `git-cipher` as a submodule inside another Git repository
 
-If you install the git-cipher repo as a submodule inside another Git repository, you can use the included `bin/git-cipher` wrapper script to invoke the copy of `git-cipher` contained in the submodule. For an example of this, see [my dotfiles repo](https://github.com/wincent/wincent), which embeds `git-cipher` under [the `vendor/` directory](https://github.com/wincent/wincent/tree/main/vendor). You could add a submodule like this as follows:
+If you install the git-cipher repo as a submodule inside another Git repository, you can use the included `bin/git-cipher` wrapper script to invoke the copy of `git-cipher` contained in the submodule. For an example of this, see [my dotfiles repo](https://github.com/wincent/wincent/tree/b98e65a2e1fefb05e99886a82caa5ff2d95262c3), which embeds `git-cipher` under [the `vendor/` directory](https://github.com/wincent/wincent/tree/b98e65a2e1fefb05e99886a82caa5ff2d95262c3/vendor). You could add a submodule like this as follows:
 
 ```
 mkdir -p vendor
